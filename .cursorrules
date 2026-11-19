@@ -1,0 +1,2 @@
+Ikuti AGENTS.md di root repo. Aturan ringkas yang selalu aktif ada di .cursor/rules/*.mdc.
+Tool dan script buatan agent wajib di agents/, bukan di folder temp. Tanpa baris atribusi AI di commit/PR.

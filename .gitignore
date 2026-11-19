@@ -1,0 +1,23 @@
+node_modules/
+dist/
+build/
+coverage/
+*.log
+.turbo/
+.vite/
+
+# secrets and local-only files (never commit)
+.env
+.env.*
+!.env.example
+*.local.*
+docs/local/
+*.pem
+*.key
+
+# agent working area: keep structure, not scratch output
+agents/work/**/source/
+agents/work/**/outputs/
+.claude/settings.local.json
+.DS_Store
+Thumbs.db

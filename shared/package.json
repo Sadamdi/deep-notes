@@ -1,0 +1,18 @@
+{
+  "name": "@deep-notes/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint src",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^4.6.7"
+  }
+}

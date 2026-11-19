@@ -1,0 +1,39 @@
+import { z } from "zod";
+
+/**
+ * Domain contracts for the study-group notebook. These are the single source of truth for
+ * request/response shapes: the API validates with them, the web builds forms from them.
+ */
+
+export const notebookRoleSchema = z.enum(["owner", "editor", "viewer"]);
+export type NotebookRole = z.infer<typeof notebookRoleSchema>;
+
+export const createNotebookSchema = z.object({
+  title: z.string().trim().min(3).max(120),
+  course: z.string().trim().max(120).optional(),
+});
+export type CreateNotebookInput = z.infer<typeof createNotebookSchema>;
+
+export const sourceKindSchema = z.enum(["pdf", "slides", "link", "note"]);
+export type SourceKind = z.infer<typeof sourceKindSchema>;
+
+/** One piece of evidence behind an answer: which source, which page, which passage. */
+export const citationSchema = z.object({
+  sourceId: z.string(),
+  sourceTitle: z.string(),
+  page: z.number().int().positive().nullable(),
+  quote: z.string(),
+});
+export type Citation = z.infer<typeof citationSchema>;
+
+export const askQuestionSchema = z.object({
+  question: z.string().trim().min(3).max(1000),
+});
+export type AskQuestionInput = z.infer<typeof askQuestionSchema>;
+
+/** An answer is either grounded (has citations) or an explicit "not found in the sources". */
+export const answerSchema = z.discriminatedUnion("grounded", [
+  z.object({ grounded: z.literal(true), text: z.string(), citations: z.array(citationSchema).min(1) }),
+  z.object({ grounded: z.literal(false), text: z.string() }),
+]);
+export type Answer = z.infer<typeof answerSchema>;

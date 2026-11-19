@@ -1,0 +1,15 @@
+---
+description: Gerbang sebelum melapor task selesai
+alwaysApply: true
+---
+
+# Sebelum bilang "selesai"
+
+- [ ] `pnpm lint`, `pnpm type-check`, `pnpm test`, `pnpm build` lulus
+- [ ] perubahan perilaku dicoba sungguhan (API dipanggil, UI dibuka; cek Network dan Console)
+- [ ] jalur gagal diuji (input salah, belum login, bukan anggota notebook)
+- [ ] akses dua notebook terpisah diuji untuk endpoint notebook-scoped
+- [ ] fitur AI diuji ke model sungguhan; catat model, hasil, waktu
+- [ ] dokumen diperbarui + entri `docs/version/` (Verification terisi tanpa nilai rahasia)
+- [ ] tidak ada dead code, `console.log` debug, atau TODO tanpa entri
+- [ ] laporan jujur: sebut yang tidak diverifikasi

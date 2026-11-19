@@ -1,0 +1,17 @@
+---
+description: SOP ringkas Deep Notes yang selalu aktif
+alwaysApply: true
+---
+
+# Deep Notes SOP (ringkas)
+
+Baca `AGENTS.md` di root untuk aturan lengkap. Yang paling kritis:
+
+1. Tanpa baris atribusi AI di commit, PR, dan file.
+2. Tool/script/file kerja agent di `agents/`, bukan di folder temp.
+3. Baca script sebelum menjalankan; script tulis/hapus data hanya ke database `localhost`.
+4. Tidak ada rahasia di git (`.env`, API key, akun testing asli).
+5. Kontrak dulu: skema Zod di `shared/`, dipakai backend dan frontend.
+6. Setiap perubahan: `pnpm lint`, `pnpm type-check`, `pnpm test`, `pnpm build` lulus + dokumen diperbarui + diverifikasi nyata.
+7. Branch + PR ke `main`; dilarang push langsung dan `--no-verify`.
+8. Jangan mengarang data survei/uji; fitur rencana bukan fitur selesai; contoh data dilabeli.

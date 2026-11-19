@@ -1,0 +1,18 @@
+---
+description: Arsitektur berlapis backend
+globs: backend/src/**/*.ts
+alwaysApply: false
+---
+
+# Backend berlapis
+
+Setiap modul: `routes → controller → service → repository` di `backend/src/modules/<nama>/`.
+
+1. Controller tidak menyentuh database/klien AI.
+2. Service tidak menyentuh `req`/`res`.
+3. Hanya repository yang memakai Drizzle. Raw SQL hanya untuk pencarian vektor, dan filter notebook harus ada di dalam query.
+4. Semua handler dibungkus `asyncHandler`; input divalidasi dengan `validate` + skema dari `shared/`.
+5. Response lewat `ok()`/`fail()`; error lewat `AppError` dengan kode dari `shared/`. Jangan bocorkan stack trace.
+6. Notebook-scoped: pengguna non-anggota mendapat `NOT_FOUND`. Wajib ada tes dengan dua notebook.
+7. Jawaban AI: `grounded: true` dengan sitasi yang benar-benar berasal dari chunk yang diambil, atau `grounded: false`.
+8. Konfigurasi hanya lewat `config/env.ts`; jangan hardcode secret, URL, port.

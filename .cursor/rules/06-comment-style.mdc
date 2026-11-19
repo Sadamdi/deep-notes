@@ -1,0 +1,11 @@
+---
+description: Gaya komentar kode
+globs: "**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# Komentar
+
+- Hanya jelaskan *kenapa* (aturan bisnis, workaround, batasan), bukan *apa* yang sudah jelas dari kode.
+- Bahasa Inggris. Tanpa komentar yang menceritakan riwayat perubahan atau menunjuk task.
+- Aturan bisnis penting diberi kode `BR-XX` yang sama dengan dokumen fitur.

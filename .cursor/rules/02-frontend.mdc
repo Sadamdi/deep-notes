@@ -1,0 +1,16 @@
+---
+description: Konvensi frontend
+globs: frontend/src/**/*.{ts,tsx,css}
+alwaysApply: false
+---
+
+# Frontend
+
+1. Struktur: `components/ui` (shadcn), `components`, `features/<fitur>`, `pages`, `lib`.
+2. Data server lewat TanStack Query; form lewat React Hook Form + skema Zod dari `shared/`; tabel lewat TanStack Table (v9, `useTable`).
+3. Panggilan API hanya lewat `lib/api.ts`.
+4. Styling hanya dengan token Tailwind (`bg-primary`, `text-muted-foreground`, ...). Tanpa hex/warna arbitrer. Token baru dicatat di `docs/DESIGN_SYSTEM.md`.
+5. Tambah komponen shadcn dengan CLI; jangan menulis ulang komponen yang sudah ada.
+6. Aksesibilitas: label di setiap input, fokus terlihat, kontras AA, status tidak hanya lewat warna, bisa dipakai dengan keyboard.
+7. three.js lazy-loaded, opsional, hormati `prefers-reduced-motion`; informasi tetap tersedia sebagai teks.
+8. Data contoh/mockup selalu diberi label "sample" di UI.

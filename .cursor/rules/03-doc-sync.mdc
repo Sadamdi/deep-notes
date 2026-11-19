@@ -1,0 +1,19 @@
+---
+description: Sinkronisasi dokumen di setiap perubahan
+alwaysApply: true
+---
+
+# Dokumen wajib per perubahan
+
+| Perubahan | Perbarui |
+|---|---|
+| Endpoint/kontrak | `shared/src` + `docs/API_CONTRACT.md` |
+| Fitur | `docs/features/<NN-area>/<nama>.md` + `FEATURE_INDEX.md` |
+| Alur | `docs/flows/` + `FLOWS_INDEX.md` |
+| Skema DB | `backend/src/db/schema.ts` + migrasi + `docs/DATABASE_GUIDE.md` bila perlu |
+| UI/token | `docs/DESIGN_SYSTEM.md` |
+| Arsitektur | `docs/ARCHITECTURE.md` |
+| Tiap task | `docs/version/` (Plan sebelum kode, Released sesudah) + `VERSION_INDEX.md` |
+| TODO | `docs/todo/TODO_INDEX.md` |
+
+Dokumen yang menyebut perilaku lama harus ikut diperbarui. Ikuti `_*_TEMPLATE.md`. Dokumen `docs/` berbahasa Inggris; tanpa rahasia.

@@ -93,3 +93,21 @@ Decision needed: a domain or subdomain for the demo. Without one the app is reac
 ## 8. After the first successful deploy
 
 Update this page (remove "unverified" where proven), `docs/version/`, and `agents/knowledge/proyek.md`; record the health check result (status code and time), not secrets.
+
+## 9. Current demo topology (24 Nov 2026): Vercel frontend, backend behind a Cloudflare quick tunnel
+
+The shared demo VPS already runs other projects (apache2 on port 80, other pm2 apps, other tunnels), so nginx and the static frontend are not used there. What actually runs:
+
+| Part | Where | Notes |
+|---|---|---|
+| Frontend | Vercel (Vercel domain) | rewrite `/api/*` to the tunnel URL |
+| Backend | pm2 app `deepnotes-api` on the VPS, `127.0.0.1:4000` | files in `/opt/deepnotes/app/backend`, env in `/opt/deepnotes/.env` (chmod 600) |
+| Public HTTPS | pm2 app `deepnotes-tunnel` (`cloudflared` quick tunnel) | URL on `trycloudflare.com`, **changes whenever the tunnel restarts** |
+
+Health check: `GET <tunnel-url>/api/v1/health`.
+
+Rules learned the hard way:
+- The VPS has `~/.cloudflared/config.yml` for another project. A quick tunnel started without `--config` loads it and answers every request with an empty 404. Always start with `--config /opt/deepnotes/cloudflared-quick.yml` (an empty file).
+- The server has 1 GB RAM: build on a laptop and upload `dist/` plus a production `package.json`, then `npm install --omit=dev` on the server. Do not run `pnpm install` there.
+- After a tunnel restart, read the new URL with `pm2 logs deepnotes-tunnel --nostream | grep trycloudflare` and update the Vercel rewrite. For a stable URL, move to a named tunnel with a domain (section 7).
+- SSH to the VPS: port 22232 with a key. Passwords are never used by agents and must not be pasted into chat.

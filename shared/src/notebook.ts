@@ -11,10 +11,13 @@ export type NotebookRole = z.infer<typeof notebookRoleSchema>;
 export const createNotebookSchema = z.object({
   title: z.string().trim().min(3).max(120),
   course: z.string().trim().max(120).optional(),
+  description: z.string().trim().max(500).optional(),
+  category: z.string().trim().max(60).optional(),
+  visibility: z.enum(["private", "public"]).optional(),
 });
 export type CreateNotebookInput = z.infer<typeof createNotebookSchema>;
 
-export const sourceKindSchema = z.enum(["pdf", "slides", "link", "note"]);
+export const sourceKindSchema = z.enum(["pdf", "text", "docx", "pptx", "link"]);
 export type SourceKind = z.infer<typeof sourceKindSchema>;
 
 /** One piece of evidence behind an answer: which source, which page, which passage. */

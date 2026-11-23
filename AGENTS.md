@@ -91,6 +91,9 @@ Sebuah task selesai hanya jika semua ini benar:
 - **Dilarang tanpa izin eksplisit**: migrasi ke database bersama, seed ke produksi, delete/update massal. Hentikan, jelaskan apa dan database mana, tunggu "ya" untuk satu perintah itu. Sebelum operasi tulis massal yang diizinkan, backup dulu (`pg_dump`).
 - **Rahasia tidak boleh masuk git**: `.env`, API key (Gemini dll), token, password, dan akun testing asli. Simpan di `.env` (gitignored) atau `docs/local/*.local.md` (gitignored). Contoh format ada di `.env.example` dan `docs/TESTING_ACCOUNTS.example.md`. Contoh email di dokumen pakai `example.com`.
 - Jangan menaruh rahasia di transkrip chat, komentar PR, atau dokumen. Laporkan nama variabel, bukan nilainya.
+- **Agent tidak login dengan password dan tidak memakai kredensial yang ditempel di chat.** Login pertama ke server/database dilakukan manusia; agent baru boleh bekerja lewat akses berbasis kunci (SSH key) yang sudah disiapkan. Kalau pengguna menempelkan rahasia di chat: jangan disalin ke file atau dokumen, katakan itu harus di-rotate, dan arahkan ke `docs/DEPLOYMENT.md` bagian 1.
+- Database yang di-host (Supabase dsb.) dianggap **bersama/demo**: pengembangan, test, seed, dan cleanup memakai database lain. Satu database hosted = untuk server saja.
+- Model AI dan kunci diatur lewat konfigurasi (`backend/.env`); jangan menulis id model atau kunci di kode. Embedding dipatok ke satu model; jangan campur model dalam satu notebook.
 - Materi kuliah yang diunggah pengguna bisa bermuatan hak cipta/privasi: jangan menyimpan atau me-log isi dokumen di log aplikasi; data demo hanya materi publik atau tulisan tim sendiri.
 - Hasil survei dan wawancara: jangan mengutip isian bebas responden tanpa izin; jangan menaruh kontak responden di repo.
 
@@ -142,7 +145,11 @@ Dokumen yang menyebut perilaku lama harus ikut diperbarui, bukan hanya file utam
 - Mockup/simulasi wajib dilabeli di UI dan dokumen. Fitur rencana ≠ fitur selesai.
 - Final Day menuntut prototipe yang bekerja dan demo 10 menit: prioritaskan alur inti (buat notebook → unggah sumber → tanya dengan sitasi → kuis) sebelum fitur sosial.
 
-## 11. Komunikasi dengan Adam
+## 11. Rencana aktif
+
+Baca [`docs/PLAN_SEMIFINAL.md`](docs/PLAN_SEMIFINAL.md) setelah file ini: prioritas fitur (F-01 sampai F-14), fase dan tanggal, rencana validasi, dan peta proposal. Prioritas P0 yang tidak boleh dipotong: F-04 (jawaban bersitasi), F-06 (kontribusi), F-07 (evaluasi grounding). Pembeda yang jujur dan yang BUKAN pembeda ada di [`docs/product/COMPETITIVE_ANALYSIS.md`](docs/product/COMPETITIVE_ANALYSIS.md): sitasi dan kuis dari sumber sudah ada di NotebookLM, jangan diklaim unik. Deploy dan server: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+
+## 12. Komunikasi dengan Adam
 
 - Bahasa Indonesia santai, ringkas, jujur. Beri rekomendasi, bukan daftar panjang tanpa pilihan.
 - Tanyakan sekali dengan pilihan jelas bila keputusan memang milik Adam/tim.

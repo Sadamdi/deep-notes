@@ -21,3 +21,6 @@ agents/work/**/outputs/
 .claude/settings.local.json
 .DS_Store
 Thumbs.db
+.data/
+uploads/
+backups/

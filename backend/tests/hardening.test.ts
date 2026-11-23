@@ -182,7 +182,7 @@ describe("AI provider layer (HTTP stubbed)", () => {
   it("falls back to the OpenAI-compatible endpoint when every Gemini key fails", async () => {
     env.GEMINI_API_KEYS.splice(0, env.GEMINI_API_KEYS.length, "k1");
     env.OPENAI_COMPAT_BASE_URL = "https://proxy.test/v1";
-    env.OPENAI_COMPAT_API_KEY = "proxy-key";
+    env.OPENAI_COMPAT_API_KEY = "fixture-proxy";
     vi.stubGlobal("fetch", async (url: string) =>
       String(url).includes("generativelanguage")
         ? new Response("down", { status: 503 })
@@ -204,9 +204,9 @@ describe("AI provider layer (HTTP stubbed)", () => {
   });
 
   it("does not leak the key in errors and embeds with normalised vectors", async () => {
-    env.GEMINI_API_KEYS.splice(0, env.GEMINI_API_KEYS.length, "secret-key-123");
+    env.GEMINI_API_KEYS.splice(0, env.GEMINI_API_KEYS.length, "fixture-key-one");
     vi.stubGlobal("fetch", async (_u: string, init: RequestInit) => {
-      expect(String(_u)).not.toContain("secret-key-123"); // sent in a header, never in the URL
+      expect(String(_u)).not.toContain("fixture-key-one"); // sent in a header, never in the URL
       expect(init.headers).toHaveProperty("x-goog-api-key");
       return new Response(JSON.stringify({ embeddings: [{ values: [3, 4] }] }), { status: 200 });
     });

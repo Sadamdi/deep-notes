@@ -18,6 +18,14 @@ import { validate } from "../../middleware/validate.js";
 export const notebookRoutes = Router();
 notebookRoutes.use(requireAuth);
 
+export const MAX_NOTEBOOKS_PER_USER = 20;
+export const MAX_MEMBERS_PER_NOTEBOOK = 50;
+
+async function assertRoomForMember(notebookId: string): Promise<void> {
+  const c = await (await getDb()).query<{ n: number }>("SELECT count(*)::int AS n FROM notebook_members WHERE notebook_id = $1", [notebookId]);
+  if (c[0]!.n >= MAX_MEMBERS_PER_NOTEBOOK) throw new AppError("CONFLICT", `A notebook can have at most ${MAX_MEMBERS_PER_NOTEBOOK} members`);
+}
+
 const FIELDS = `n.id, n.title, n.course, n.description, n.category, n.visibility, n.owner_id AS "ownerId", n.created_at AS "createdAt"`;
 
 notebookRoutes.post(
@@ -26,6 +34,8 @@ notebookRoutes.post(
   asyncHandler(async (req, res) => {
     const b = req.body as { title: string; course?: string; description?: string; category?: string; visibility?: string };
     const db = await getDb();
+    const owned = await db.query<{ n: number }>("SELECT count(*)::int AS n FROM notebooks WHERE owner_id = $1", [req.user!.id]);
+    if (owned[0]!.n >= MAX_NOTEBOOKS_PER_USER) throw new AppError("CONFLICT", `You can own at most ${MAX_NOTEBOOKS_PER_USER} notebooks`);
     const rows = await db.query<{ id: string }>(
       "INSERT INTO notebooks(title, course, description, category, visibility, owner_id) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id",
       [b.title, b.course ?? null, b.description ?? null, b.category ?? null, b.visibility ?? "private", req.user!.id],
@@ -120,6 +130,7 @@ notebookRoutes.post(
     if (!u[0]) throw new AppError("NOT_FOUND", "No user with that email");
     const exists = await db.query("SELECT 1 FROM notebook_members WHERE notebook_id = $1 AND user_id = $2", [req.member!.notebookId, u[0].id]);
     if (exists.length) throw new AppError("CONFLICT", "Already a member");
+    await assertRoomForMember(req.member!.notebookId);
     await db.query("INSERT INTO notebook_members(notebook_id, user_id, role) VALUES ($1,$2,$3)", [req.member!.notebookId, u[0].id, role]);
     res.status(201).json(ok({ userId: u[0].id, role }));
   }),
@@ -190,6 +201,7 @@ inviteRoutes.post(
     if (!i || new Date(i.expires_at) < new Date() || i.uses >= i.max_uses) throw new AppError("NOT_FOUND", "Invite is invalid or expired");
     const member = await db.query("SELECT 1 FROM notebook_members WHERE notebook_id = $1 AND user_id = $2", [i.notebook_id, req.user!.id]);
     if (!member.length) {
+      await assertRoomForMember(i.notebook_id);
       await db.query("INSERT INTO notebook_members(notebook_id, user_id, role) VALUES ($1,$2,$3)", [i.notebook_id, req.user!.id, i.role]);
       await db.query("UPDATE invites SET uses = uses + 1 WHERE token = $1", [req.params.token]);
     }
@@ -269,6 +281,7 @@ notebookRoutes.post(
     );
     if (!r.length) throw new AppError("NOT_FOUND", "No pending request");
     if (decision === "approve") {
+      await assertRoomForMember(req.member!.notebookId);
       await db.query(
         "INSERT INTO notebook_members(notebook_id, user_id, role) VALUES ($1,$2,'viewer') ON CONFLICT DO NOTHING",
         [req.member!.notebookId, req.params.userId],

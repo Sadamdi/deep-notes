@@ -2,6 +2,9 @@ import { getAi } from "../../ai/index.js";
 import { getDb, toVector } from "../../db/index.js";
 import { chunkPages, type ExtractedPage } from "./extract.js";
 
+/** Ready pages, or a loader that produces them in the background (used for scanned PDFs). */
+export type PagesInput = ExtractedPage[] | (() => Promise<ExtractedPage[]>);
+
 const MAX_CHUNKS = 400;
 const CONCURRENCY = 2;
 
@@ -20,9 +23,10 @@ async function slot<T>(fn: () => Promise<T>): Promise<T> {
   }
 }
 
-async function run(sourceId: string, notebookId: string, pages: ExtractedPage[]): Promise<void> {
+async function run(sourceId: string, notebookId: string, input: PagesInput): Promise<void> {
   const db = await getDb();
   try {
+    const pages = typeof input === "function" ? await input() : input;
     const chunks = chunkPages(pages).slice(0, MAX_CHUNKS);
     if (chunks.length === 0) throw new Error("No readable text was found in this file");
     const vectors = await getAi().embed(
@@ -44,7 +48,7 @@ async function run(sourceId: string, notebookId: string, pages: ExtractedPage[])
 }
 
 /** Starts ingestion in the background (bounded concurrency). Status is visible on the source row. */
-export function startIngestion(sourceId: string, notebookId: string, pages: ExtractedPage[]): void {
+export function startIngestion(sourceId: string, notebookId: string, pages: PagesInput): void {
   const p: Promise<void> = slot(() => run(sourceId, notebookId, pages)).finally(() => pending.delete(p));
   pending.add(p);
 }

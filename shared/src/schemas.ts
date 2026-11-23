@@ -95,3 +95,9 @@ export type QuizItem = z.infer<typeof quizItemSchema>;
 export const emotionSchema = z.enum(["neutral", "curious", "happy", "thinking", "encouraging", "concerned"]);
 export const explanationStepSchema = z.object({ text: z.string().min(1), emotion: emotionSchema });
 export type ExplanationStep = z.infer<typeof explanationStepSchema>;
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1).max(128),
+  newPassword: z.string().min(8).max(128),
+});
+export const deleteAccountSchema = z.object({ password: z.string().min(1).max(128) });

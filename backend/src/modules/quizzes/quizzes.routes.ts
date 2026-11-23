@@ -28,6 +28,8 @@ quizRoutes.post(
     const b = req.body as { title?: string; kind: string; count: number; topic?: string; sourceId?: string; timeLimitSec?: number; perQuestionSec?: number; dueAt?: string };
     if (b.kind === "weekly" && !b.dueAt) throw new AppError("VALIDATION", "A weekly quiz needs a due date");
     if (b.kind === "exam" && !b.timeLimitSec) throw new AppError("VALIDATION", "An exam needs a time limit");
+    const total = await (await getDb()).query<{ n: number }>("SELECT count(*)::int AS n FROM quizzes WHERE notebook_id = $1", [req.member!.notebookId]);
+    if (total[0]!.n >= 100) throw new AppError("CONFLICT", "A notebook can hold at most 100 quizzes; delete old ones first");
     const items = await generateItems(req.member!.notebookId, b.count, { topic: b.topic, sourceId: b.sourceId });
     const rows = await (await getDb()).query<{ id: string }>(
       `INSERT INTO quizzes(notebook_id, created_by, title, kind, items, time_limit_sec, per_question_sec, due_at)

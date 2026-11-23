@@ -1,52 +1,63 @@
 #!/usr/bin/env bash
-# Deploy the latest main on the server. Run as the deploy user, from anywhere:
+# Deploy the backend from this machine to the demo server. Run from the repo root (Git Bash on Windows works):
 #
-#   bash /opt/deepnotes/app/scripts/deploy.sh                 # build and restart
-#   RUN_MIGRATIONS=yes bash /opt/deepnotes/app/scripts/deploy.sh   # also apply database migrations
+#   bash scripts/deploy.sh
 #
-# Migrations are never automatic: they change the shared database, so a person opts in each time.
-# If the health check fails after the restart, the script goes back to the previous commit and exits non-zero.
+# What it does: builds the backend, uploads dist/, migrations/ and a production package.json (the shared
+# package is bundled), installs production dependencies on the server (the server is small, so it never
+# builds), restarts the pm2 app and checks health. If the health check fails it restores the previous dist
+# and restarts again. Database migrations run on start and are additive; they are not rolled back.
+#
+# Settings (environment variables, defaults in brackets):
+#   DEPLOY_HOST [root@38.58.176.185]  DEPLOY_PORT [22232]  DEPLOY_KEY [~/.ssh/deepnotes_vps_ed25519]
 set -euo pipefail
 
-APP=/opt/deepnotes/app
-HEALTH_URL="http://127.0.0.1:4000/api/v1/health"
+HOST="${DEPLOY_HOST:-root@38.58.176.185}"
+PORT="${DEPLOY_PORT:-22232}"
+KEY="${DEPLOY_KEY:-$HOME/.ssh/deepnotes_vps_ed25519}"
+APP=/opt/deepnotes/app/backend
+SSH=(ssh -i "$KEY" -p "$PORT" -o BatchMode=yes "$HOST")
+SCP=(scp -i "$KEY" -P "$PORT" -o BatchMode=yes)
 
-cd "$APP"
-PREV="$(git rev-parse HEAD)"
-git fetch --quiet origin main
-git merge --ff-only origin/main
-NEW="$(git rev-parse HEAD)"
-echo "deploying $PREV -> $NEW"
+cd "$(dirname "$0")/.."
+pnpm install --frozen-lockfile
+pnpm --filter @deep-notes/backend test
+pnpm --filter @deep-notes/backend build
 
-build_and_restart() {
-  pnpm install --frozen-lockfile
-  pnpm build
-  pm2 startOrReload deploy/ecosystem.config.cjs --update-env
-  pm2 save >/dev/null
-  sudo /usr/bin/systemctl reload nginx
-}
+STAGE="$(mktemp -d)"
+trap 'rm -rf "$STAGE"' EXIT
+cp -r backend/dist "$STAGE/dist"
+cp -r backend/migrations "$STAGE/migrations"
+node -e '
+const p = require("./backend/package.json");
+delete p.dependencies["@deep-notes/shared"];
+require("fs").writeFileSync(process.argv[1] + "/package.json", JSON.stringify({ name: "deepnotes-api", private: true, type: "module", dependencies: p.dependencies }, null, 1));
+' "$STAGE"
+tar czf "$STAGE.tgz" -C "$STAGE" dist migrations package.json
 
-healthy() {
-  for _ in $(seq 1 20); do
-    curl -fsS "$HEALTH_URL" >/dev/null 2>&1 && return 0
-    sleep 1
-  done
-  return 1
-}
+"${SCP[@]}" "$STAGE.tgz" "$HOST:/tmp/deepnotes-release.tgz"
+rm -f "$STAGE.tgz"
 
-build_and_restart
-
-if [ "${RUN_MIGRATIONS:-no}" = "yes" ]; then
-  echo "applying migrations (opted in)"
-  ENV_FILE=/opt/deepnotes/.env pnpm --filter @deep-notes/backend db:migrate
-fi
-
+"${SSH[@]}" bash -s <<REMOTE
+set -euo pipefail
+cd $APP
+rm -rf dist.prev migrations.prev
+[ -d dist ] && mv dist dist.prev
+[ -d migrations ] && mv migrations migrations.prev
+tar xzf /tmp/deepnotes-release.tgz
+npm install --omit=dev --no-audit --no-fund >/dev/null
+pm2 restart deepnotes-api --update-env >/dev/null
+healthy() { for _ in \$(seq 1 25); do curl -fsS http://127.0.0.1:4000/api/v1/health >/dev/null 2>&1 && return 0; sleep 1; done; return 1; }
 if healthy; then
-  echo "healthy at $NEW"
+  pm2 save >/dev/null
+  echo "healthy: new release is live"
 else
-  echo "health check failed; rolling back to $PREV" >&2
-  git reset --hard "$PREV"
-  build_and_restart
-  healthy || echo "rollback is also unhealthy: check 'pm2 logs deepnotes-api'" >&2
+  echo "health check failed; restoring the previous release" >&2
+  rm -rf dist migrations
+  [ -d dist.prev ] && mv dist.prev dist
+  [ -d migrations.prev ] && mv migrations.prev migrations
+  pm2 restart deepnotes-api --update-env >/dev/null
+  healthy || echo "previous release is also unhealthy: run 'pm2 logs deepnotes-api' on the server" >&2
   exit 1
 fi
+REMOTE

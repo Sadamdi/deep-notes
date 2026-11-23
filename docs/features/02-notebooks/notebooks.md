@@ -10,3 +10,5 @@ Business rules
 - BR-03 An invite link carries a role (editor or viewer), expires (1 to 30 days, default 7) and has a use limit (default 20).
 - BR-04 The owner can add a member by email, change roles, and remove others. The owner cannot be demoted or removed; a member can leave.
 - BR-05 Only the owner can change settings, delete the notebook, create invites, or assign work.
+- BR-06 Quotas: 20 notebooks owned per user, 50 members per notebook (also enforced when accepting an invite or approving a join request).
+- BR-07 The owner can list and revoke invites (`GET`, `DELETE /notebooks/:id/invites`).

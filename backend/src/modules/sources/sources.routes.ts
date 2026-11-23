@@ -18,10 +18,15 @@ import {
   fetchLink,
   type ExtractedPage,
 } from "./extract.js";
-import { startIngestion } from "./ingest.js";
+import { startIngestion, type PagesInput } from "./ingest.js";
+import { getAi } from "../../ai/index.js";
+import { env } from "../../config/env.js";
 
 export const sourceRoutes = Router({ mergeParams: true });
 sourceRoutes.use(requireAuth);
+
+/** Quota that keeps one notebook from exhausting AI budget and storage on the shared demo server. */
+export const MAX_SOURCES_PER_NOTEBOOK = 40;
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: MAX_FILE_BYTES, files: 1 } });
 
@@ -36,9 +41,11 @@ const KIND_BY_EXT: Record<string, "pdf" | "text" | "docx" | "pptx"> = {
 
 const startsWith = (buf: Buffer, sig: string) => buf.subarray(0, sig.length).toString("latin1") === sig;
 
-async function createSource(req: Request, title: string, kind: string, origin: string | null, pages: ExtractedPage[]) {
+async function createSource(req: Request, title: string, kind: string, origin: string | null, pages: PagesInput) {
   const db = await getDb();
   const notebookId = req.member!.notebookId;
+  const count = await db.query<{ n: number }>("SELECT count(*)::int AS n FROM sources WHERE notebook_id = $1", [notebookId]);
+  if (count[0]!.n >= MAX_SOURCES_PER_NOTEBOOK) throw new AppError("CONFLICT", `A notebook can hold at most ${MAX_SOURCES_PER_NOTEBOOK} sources`);
   const rows = await db.query<{ id: string }>(
     "INSERT INTO sources(notebook_id, uploaded_by, title, kind, origin) VALUES ($1,$2,$3,$4,$5) RETURNING id",
     [notebookId, req.user!.id, title, kind, origin],
@@ -68,9 +75,16 @@ sourceRoutes.post(
       if (e instanceof AppError) throw e;
       throw new AppError("VALIDATION", "The file could not be read");
     }
-    if (!pages.length) throw new AppError("VALIDATION", "No readable text found. Scanned PDFs need OCR, which is not supported yet");
+    let input: PagesInput = pages;
+    if (!pages.length) {
+      // a PDF without a text layer is a scan: read it with a vision model in the background
+      if (kind !== "pdf" || env.GEMINI_API_KEYS.length === 0) throw new AppError("VALIDATION", "No readable text found in this file");
+      if (f.size > 12 * 1024 * 1024) throw new AppError("VALIDATION", "Scanned PDFs are limited to 12 MB");
+      const data = f.buffer;
+      input = async () => (await getAi().ocr(data, "application/pdf")).map((p) => ({ page: p.page, text: p.text }));
+    }
     const title = typeof req.body?.title === "string" && req.body.title.trim() ? req.body.title.trim().slice(0, 160) : path.basename(f.originalname, ext);
-    res.status(202).json(ok(await createSource(req, title, kind, null, pages)));
+    res.status(202).json(ok(await createSource(req, title, kind, null, input)));
   }),
 );
 

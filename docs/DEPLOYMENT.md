@@ -1,5 +1,7 @@
 # Deployment
 
+> **Note (24 Nov 2026):** sections 2 to 4 describe the original nginx plan, which was not used because the shared server already runs other projects. The topology that actually runs is in sections 9 and 9.1; `deploy/nginx` and `bootstrap-server.sh` were removed.
+
 Status (23 Nov 2026): **designed, not yet executed.** Nothing here has been run on the server. Items marked "unverified" must be confirmed during the first run and this page updated.
 
 ## 1. Security first

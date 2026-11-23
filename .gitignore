@@ -23,3 +23,4 @@ agents/work/**/outputs/
 Thumbs.db
 .data/
 uploads/
+backups/

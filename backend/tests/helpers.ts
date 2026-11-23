@@ -27,6 +27,9 @@ export function fakeEmbedding(text: string): number[] {
 
 /** Deterministic stand-in for the real models: word-overlap retrieval and templated JSON. */
 export const fakeAi: AiProvider = {
+  async ocr() {
+    return [{ page: 1, text: "Hasil pembacaan halaman pindaian tentang topologi bintang dan switch pusat pada jaringan kampus." }];
+  },
   async embed(texts) {
     return texts.map(fakeEmbedding);
   },

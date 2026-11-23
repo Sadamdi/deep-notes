@@ -49,6 +49,10 @@ All paths are under `/api/v1`. Every route except `/health`, `/auth/register` an
 | GET | `/auth/me` | none | user with `lookingForPartners` |
 | PATCH | `/me/profile` | `{course?, lookingForPartners?}` | profile (F-14) |
 | GET | `/me/partners` | none | `{partners: [{id, name, course}]}` (F-14) |
+| POST | `/me/password` | `{currentPassword, newPassword}` | changes the password, signs out every other device |
+| POST | `/me/logout-all` | none | ends every session |
+| GET | `/me/export` | none | a copy of my own data |
+| DELETE | `/me` | `{password}` | deletes the account and what it created; `409` while I still own notebooks (`error.details.notebooks` lists them) |
 
 ### Notebooks, members, invites (F-02, F-11)
 | Method | Path | Body | Result |
@@ -59,6 +63,8 @@ All paths are under `/api/v1`. Every route except `/health`, `/auth/register` an
 | PATCH, DELETE | `/notebooks/:id/members/:userId` | PATCH `{role}` | owner changes role; owner removes anyone, a member removes self |
 | POST | `/notebooks/:id/invites` | `{role?, expiresInDays?, maxUses?}` | `{token}` for a link such as `/join/<token>` |
 | POST | `/invites/:token/accept` | none | `{notebookId, role}` |
+| GET | `/notebooks/:id/invites` | none | owner: my invites with `uses`, `maxUses`, `expiresAt`, `inactive` |
+| DELETE | `/notebooks/:id/invites/:token` | none | owner revokes an invite |
 | GET | `/public/notebooks?q=&category=` | none | public notebooks (discoverable only) |
 | POST | `/public/notebooks/:id/join-requests` | `{message?}` | `{status: "pending"}` |
 | GET | `/notebooks/:id/join-requests` | none | pending requests (owner) |
@@ -74,12 +80,15 @@ All paths are under `/api/v1`. Every route except `/health`, `/auth/register` an
 | GET | `/notebooks/:id/sources/:sourceId/pages/:page` | none | `{page, text}` for opening a citation |
 | DELETE | `/notebooks/:id/sources/:sourceId` | none | uploader or owner |
 
+Scanned PDFs (no text layer) are accepted: the response is the same `202`, and the text is read by a vision model in the background; the source ends as `ready` or `failed` with a reason. At most 40 sources per notebook.
+
 ### Questions and explanations (F-04, F-10)
 | Method | Path | Body | Result |
 |---|---|---|---|
 | POST | `/notebooks/:id/ask` | `{question}` | `{id, grounded, text, citations: [{sourceId, sourceTitle, page, quote}]}`; when `grounded` is false the text is the fixed refusal and `citations` is empty |
 | POST | `/notebooks/:id/explain` | `{question}` | `{id, grounded, steps: [{text, emotion}], citations}`; `emotion` is one of neutral, curious, happy, thinking, encouraging, concerned |
 | GET | `/notebooks/:id/questions?limit=` | none | history with `askedByName` |
+| DELETE | `/notebooks/:id/questions/:questionId` | none | the asker or the owner |
 
 ### Quizzes (F-05, F-09, F-15)
 | Method | Path | Body | Result |
@@ -91,6 +100,7 @@ All paths are under `/api/v1`. Every route except `/health`, `/auth/register` an
 | POST | `/notebooks/:id/quizzes/:quizId/attempts` | `{answers: (0..3 or null)[], durationMs?}` | `201 {score, total, results: [{correct, correctIndex, explanation, topic, sourceTitle, page}]}` |
 | GET | `/notebooks/:id/quizzes/:quizId/scoreboard` | none | `{ranking: [{rank, name, score, total, durationMs}], notYetTaken}` |
 | GET | `/notebooks/:id/quizzes/:quizId/attempts/mine` | none | my attempts |
+| DELETE | `/notebooks/:id/quizzes/:quizId` | none | the creator or the owner |
 
 ### Group views (F-06, F-08, F-16, F-17)
 | Method | Path | Body | Result |
@@ -100,6 +110,9 @@ All paths are under `/api/v1`. Every route except `/health`, `/auth/register` an
 | GET | `/notebooks/:id/gaps` | none | `{gaps: [{topic, answered, missed, missRatePercent, membersMissed, reviewPages: [{sourceTitle, page}]}]}` |
 | GET, POST | `/notebooks/:id/assignments` | POST `{assigneeId, topic, sourceId?, dueAt?}` (owner) | `{items, perMember: [{name, total, done}]}` |
 | PATCH, DELETE | `/notebooks/:id/assignments/:assignmentId` | PATCH `{status: todo\|doing\|done}` | assignee or owner updates; owner deletes |
+
+### Limits
+20 notebooks owned per user, 50 members and 40 sources per notebook, 100 quizzes per notebook, 15 MB per file (12 MB for scanned PDFs), 40 questions per 10 minutes and 12 quiz generations per 10 minutes per user. Exceeding a count limit returns `409 CONFLICT`, exceeding a rate limit returns `429 RATE_LIMITED`.
 
 ### Platform
 | Method | Path | Result |

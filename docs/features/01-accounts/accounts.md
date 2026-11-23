@@ -11,3 +11,7 @@ Business rules
 - BR-04 Wrong email and wrong password return the same error, so accounts cannot be enumerated.
 - BR-05 Register and login are limited to 20 attempts per 15 minutes per address and email.
 - BR-06 Responses never contain the password hash.
+
+Account management (added 24 Nov): `POST /me/password` (needs the current password; ends other devices), `POST /me/logout-all`, `GET /me/export`, `DELETE /me`.
+- BR-07 Deleting an account needs the password and is refused while the user owns notebooks (delete them first). It removes the user's sources, questions, quiz attempts, assignments, activity and memberships.
+- BR-08 Expired sessions and long-expired invites are removed at start and every 6 hours.

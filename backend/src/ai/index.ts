@@ -1,4 +1,4 @@
-import type { ZodType } from "zod";
+import { z, type ZodType } from "zod";
 import { env } from "../config/env.js";
 
 export type EmbedTask = "RETRIEVAL_DOCUMENT" | "RETRIEVAL_QUERY";
@@ -14,6 +14,8 @@ export interface GenerateJsonOptions<T> {
 export interface AiProvider {
   generateJson<T>(opts: GenerateJsonOptions<T>): Promise<T>;
   embed(texts: string[], task: EmbedTask): Promise<number[][]>;
+  /** Reads text from a scanned document (no text layer) with a vision model. */
+  ocr(data: Buffer, mimeType: string): Promise<Array<{ page: number; text: string }>>;
 }
 
 const GEMINI = "https://generativelanguage.googleapis.com/v1beta";
@@ -48,12 +50,12 @@ class KeyRing {
   }
 }
 
-async function postJson(url: string, body: unknown, headers: Record<string, string> = {}): Promise<Record<string, any>> { // eslint-disable-line @typescript-eslint/no-explicit-any
+async function postJson(url: string, body: unknown, headers: Record<string, string> = {}, timeoutMs = 60_000): Promise<Record<string, any>> { // eslint-disable-line @typescript-eslint/no-explicit-any
   const res = await fetch(url, {
     method: "POST",
     headers: { "content-type": "application/json", ...headers },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(60_000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   const text = await res.text();
   if (!res.ok) throw new HttpError(res.status, text.slice(0, 200));
@@ -127,6 +129,36 @@ export function createRealAi(): AiProvider {
         }
       }
       throw new Error(`AI generation failed: ${(last as Error)?.message ?? last}`);
+    },
+
+    async ocr(data, mimeType) {
+      if (env.GEMINI_API_KEYS.length === 0) throw new Error("scanned documents need GEMINI_API_KEYS");
+      const prompt =
+        'Transkripsikan seluruh teks pada dokumen ini apa adanya, per halaman, tanpa menambah, merangkum, atau menyimpulkan. Balas JSON saja: {"pages":[{"page":number,"text":string}]}. Lewati halaman tanpa teks.';
+      const schema = z.object({ pages: z.array(z.object({ page: z.number().int().positive(), text: z.string() })) });
+      let last: unknown = new Error("no Gemini key available");
+      for (let attempt = 0; attempt < Math.max(2, Math.min(ring.size, 5)); attempt++) {
+        const key = ring.next();
+        if (!key) break;
+        try {
+          const j = await postJson(
+            `${GEMINI}/models/${textModel}:generateContent`,
+            {
+              contents: [{ role: "user", parts: [{ inlineData: { mimeType, data: data.toString("base64") } }, { text: prompt }] }],
+              generationConfig: { responseMimeType: "application/json", temperature: 0 },
+            },
+            { "x-goog-api-key": key },
+            180_000,
+          );
+          const text = j.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("") ?? "";
+          return schema.parse(extractJson(text)).pages.filter((p) => p.text.trim());
+        } catch (e) {
+          last = e;
+          if (e instanceof HttpError && [403, 429, 500, 502, 503].includes(e.status)) ring.rest(key);
+          else if (!(e instanceof SyntaxError)) throw e;
+        }
+      }
+      throw new Error(`text recognition failed: ${(last as Error)?.message ?? last}`);
     },
 
     async embed(texts, task) {

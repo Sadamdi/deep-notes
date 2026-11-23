@@ -38,17 +38,30 @@ Lists use cursors: `?cursor=<opaque>&limit=20` (limit 1 to 100, default 20). The
 
 ## Endpoints
 
-| Method | Path | Status | Description |
-|---|---|---|---|
-| GET | `/health` | implemented | service status and time |
-| POST | `/auth/register`, `/auth/login`, `/auth/logout`, GET `/auth/me` | planned | accounts and session |
-| GET/POST | `/notebooks` | planned | list and create notebooks |
-| GET | `/notebooks/:id` | planned | notebook detail (members only) |
-| POST | `/notebooks/:id/members` | planned | invite a member |
-| GET/POST | `/notebooks/:id/sources` | planned | list and upload sources |
-| POST | `/notebooks/:id/questions` | planned | ask a question, returns an `Answer` |
-| POST | `/notebooks/:id/quizzes` | planned | generate a quiz from the sources |
-| POST | `/quizzes/:id/attempts` | planned | submit answers, returns score |
-| GET | `/notebooks/:id/contributions` | planned | who added which sources |
+Status: `implemented` (has a test and a feature doc), `planned` (agreed, not built). Frontend can build against the planned shapes now; the Zod schema in `shared/` is added in the same PR that adds the endpoint, so check there first. IDs refer to [PLAN_SEMIFINAL.md](PLAN_SEMIFINAL.md).
 
-Mark an endpoint `implemented` only after it has a test and a feature doc in `docs/features/`.
+| Feature | Method | Path | Status | Description |
+|---|---|---|---|---|
+| platform | GET | `/health` | implemented | service status and time |
+| F-01 | POST | `/auth/register` | planned | create an account (rate limited) |
+| F-01 | POST | `/auth/login`, `/auth/logout` | planned | start or end a session (httpOnly cookie) |
+| F-01 | GET | `/auth/me` | planned | current user |
+| F-02 | GET, POST | `/notebooks` | planned | my notebooks (cursor list), create |
+| F-02 | GET, PATCH, DELETE | `/notebooks/:id` | planned | detail (members only); owner edits or deletes |
+| F-02 | GET, POST | `/notebooks/:id/members` | planned | list; invite by username or email |
+| F-02 | POST | `/notebooks/join` | planned | join with an invite code or link |
+| F-03 | GET, POST | `/notebooks/:id/sources` | planned | list; upload (multipart) |
+| F-03 | GET, DELETE | `/notebooks/:id/sources/:sourceId` | planned | status and details; remove |
+| F-04 | POST | `/notebooks/:id/questions` | planned | ask; returns an `Answer` (grounded with citations, or "not found") |
+| F-04 | GET | `/notebooks/:id/questions` | planned | question history (cursor) |
+| F-05 | POST | `/notebooks/:id/quizzes` | planned | generate a quiz from the sources |
+| F-05 | GET | `/notebooks/:id/quizzes`, `/quizzes/:quizId` | planned | list; detail (no answers before submitting) |
+| F-05 | POST | `/quizzes/:quizId/attempts` | planned | submit answers; returns score and per-question result |
+| F-06 | GET | `/notebooks/:id/contributions` | planned | per member: sources added, questions asked, quizzes taken |
+| F-08 | GET | `/notebooks/:id/progress` | planned | group quiz results and weak topics |
+| F-09 | POST | `/quizzes/:quizId/attempts/start` | planned | start a timed attempt (exam mode) |
+| F-10 | (inside F-04) | `Answer.steps[]` | planned | explanation steps, each with an `emotion` for the companion |
+| F-11 | GET | `/public/notebooks` | planned | browse and search public notebooks by category |
+| F-11 | POST | `/public/notebooks/:id/join-request` | planned | ask to join a public notebook |
+
+Mark an endpoint `implemented` only after it has a test, a feature doc in `docs/features/`, and a verified run.

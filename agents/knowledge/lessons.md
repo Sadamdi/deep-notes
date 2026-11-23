@@ -16,3 +16,9 @@ TanStack Table v9 memakai `useTable` + `tableFeatures` (bukan API v8); Prisma 8 
 
 ## [tooling] Pemisah heredoc di shell
 Menulis banyak file sekaligus dengan heredoc panjang bisa gagal parse. Untuk file kode, pakai alat tulis file satu per satu.
+
+## [keamanan] Rahasia yang ditempel di chat dianggap bocor
+Kunci API, password server, dan password database pernah ditempel ke chat saat perencanaan (23 Nov 2026). Semuanya harus di-rotate (lihat `docs/DEPLOYMENT.md` bagian 1). Simpan rahasia hanya di `.env` (gitignored, `chmod 600` di server). Agent tidak login dengan password; login pertama dilakukan manusia, lalu pakai SSH key.
+
+## [produk] Sitasi dan kuis dari sumber bukan pembeda
+NotebookLM sudah punya jawaban bersitasi, kuis/flashcard dari sumber, dan berbagi notebook. Juri preliminary menilai pembeda kami lemah (3/5). Pembeda yang masuk akal ada di tingkat kelompok: kontribusi per anggota, kemajuan kelompok, notebook publik per mata kuliah, penjelasan teks dengan karakter. Bangun dan buktikan dulu sebelum diklaim di proposal.

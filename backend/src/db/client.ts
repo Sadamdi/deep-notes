@@ -7,5 +7,11 @@ if (!env.DATABASE_URL) {
   throw new Error("DATABASE_URL is required to use the database");
 }
 
-export const pool = new pg.Pool({ connectionString: env.DATABASE_URL });
+export const pool = new pg.Pool({
+  connectionString: env.DATABASE_URL,
+  // TODO: pin the hosting provider's CA certificate and verify it instead of skipping verification
+  ssl: env.DATABASE_SSL === "require" ? { rejectUnauthorized: false } : undefined,
+  max: 10,
+});
+
 export const db = drizzle(pool, { schema });

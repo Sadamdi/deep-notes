@@ -4,6 +4,10 @@
 |---|---|
 | [product/PRODUCT_BRIEF.md](product/PRODUCT_BRIEF.md) | what Deep Notes is, who it is for, scope of version one |
 | [product/abstract-preliminary.md](product/abstract-preliminary.md) | the abstract submitted for the preliminary round |
+| [PLAN_SEMIFINAL.md](PLAN_SEMIFINAL.md) | **current plan**: goals, feature priorities, phases and dates, validation plan, proposal map |
+| [product/PRELIM_FEEDBACK.md](product/PRELIM_FEEDBACK.md) | preliminary score, judge comment, our response |
+| [product/COMPETITIVE_ANALYSIS.md](product/COMPETITIVE_ANALYSIS.md) | verified comparison with existing tools; what is and is not a differentiator |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | server topology, one-time setup, deploy and rollback, environment variables, secret rotation |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | system layout, data flow, retrieval and citation design |
 | [API_CONTRACT.md](API_CONTRACT.md) | response envelope, error codes, pagination, endpoint list |
 | [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) | tokens, components, accessibility rules, citation UI |

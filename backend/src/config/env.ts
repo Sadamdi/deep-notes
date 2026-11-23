@@ -27,8 +27,9 @@ const envSchema = z.object({
   GEMINI_API_KEYS: csv(),
   OPENAI_COMPAT_BASE_URL: z.string().url().optional(),
   OPENAI_COMPAT_API_KEY: z.string().optional(),
-  AI_TEXT_MODEL: z.string().optional(),
-  AI_FALLBACK_TEXT_MODEL: z.string().optional(),
+  // Chosen by the T-012 benchmark (agents/model-bench): see docs/product/MODEL_SELECTION.md
+  AI_TEXT_MODEL: z.string().default("gemini-2.5-flash"),
+  AI_FALLBACK_TEXT_MODEL: z.string().default("phantom/vibecode/qwen3.8-flash"),
   // Embeddings are pinned to one model: vectors from different models are not comparable.
   AI_EMBED_MODEL: z.string().default("gemini-embedding-001"),
   AI_EMBED_DIMENSIONS: z.coerce.number().int().default(768),
@@ -38,7 +39,9 @@ export type Env = z.infer<typeof envSchema>;
 
 /** Parse once at boot so a bad config fails fast instead of at the first request. */
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
-  const parsed = envSchema.safeParse(source);
+  // an empty line such as `DATABASE_URL=` in .env means "not set"
+  const cleaned = Object.fromEntries(Object.entries(source).filter(([, v]) => v !== ""));
+  const parsed = envSchema.safeParse(cleaned);
   if (!parsed.success) {
     throw new Error(`Invalid environment: ${JSON.stringify(parsed.error.flatten().fieldErrors)}`);
   }

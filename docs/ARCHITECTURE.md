@@ -8,7 +8,7 @@ Browser (frontend, React)
    ▼
 Backend (Express 5, TypeScript)
    │  routes → controller → service → repository
-   ├── PostgreSQL 16 + pgvector (Drizzle ORM)
+   ├── PostgreSQL 16 + pgvector (plain SQL migrations; embedded PGlite for dev and tests)
    └── Gemini API (embeddings, answers, quizzes)
 
 shared/  Zod schemas + types imported by both frontend and backend
@@ -31,7 +31,7 @@ Each feature module lives in `backend/src/modules/<name>/` with the same four fi
 | `<name>.routes.ts` | map paths to controllers, attach `validate` and auth middleware | contain logic |
 | `<name>.controller.ts` | read the validated request, call a service, shape the response | touch the database or the AI client |
 | `<name>.service.ts` | business rules, orchestration, authorization checks | touch `req`/`res` |
-| `<name>.repository.ts` | Drizzle queries | contain business rules |
+| `<name>.repository.ts` | SQL queries (via the small `Db` interface in `src/db`) | contain business rules |
 
 Cross-cutting code: `config/env.ts` (validated environment), `lib/` (errors, response helpers), `middleware/` (async wrapper,
 validation, error handler), `db/` (schema and client).
@@ -99,7 +99,7 @@ Upload (type and size checked, stored outside the web root) → parse into pages
 
 ## Authentication (planned)
 
-Email and password, hashed with argon2id. A session row per login, referenced by an httpOnly, SameSite cookie (Secure in production). Rate limit login and registration. Google sign-in may come later.
+Email and password, hashed with scrypt (Node crypto, memory-hard; chosen over argon2id to avoid a native dependency). A session row per login, referenced by an httpOnly, SameSite cookie (Secure in production). Rate limit login and registration. Google sign-in may come later.
 
 ## Environments
 
@@ -115,7 +115,7 @@ Hosting, topology and the deploy flow: [DEPLOYMENT.md](DEPLOYMENT.md). Database 
 | Decision | Why |
 |---|---|
 | TypeScript end to end with a shared contract | one schema validates the API and builds the forms, so they cannot drift |
-| Drizzle ORM instead of Prisma | native pgvector column and index support; no query engine binary; plain TypeScript schema |
+| Plain SQL migrations and a thin `Db` interface instead of an ORM | the same code runs on node-postgres (server) and embedded PGlite with pgvector (development and tests, no database install); queries stay explicit and reviewable |
 | pgvector inside PostgreSQL | one database for relational data and vectors; no separate vector service to run or pay for |
 | Express 5 | team familiarity, async error handling built in |
 | Gemini API | Google technology fits the competition and has a free tier for development |

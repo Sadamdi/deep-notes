@@ -111,3 +111,9 @@ Rules learned the hard way:
 - The server has 1 GB RAM: build on a laptop and upload `dist/` plus a production `package.json`, then `npm install --omit=dev` on the server. Do not run `pnpm install` there.
 - After a tunnel restart, read the new URL with `pm2 logs deepnotes-tunnel --nostream | grep trycloudflare` and update the Vercel rewrite. For a stable URL, move to a named tunnel with a domain (section 7).
 - SSH to the VPS: port 22232 with a key. Passwords are never used by agents and must not be pasted into chat.
+
+### 9.1 Update 24 Nov 2026: database and what runs now
+- The API on the VPS uses the Supabase session pooler (`DATABASE_SSL=require`); migrations in `backend/migrations/*.sql` are applied automatically at start by `getDb()` and can be run by hand with `pnpm --filter @deep-notes/backend db:migrate`. pgvector is created by migration `0001`.
+- An embedded PGlite database exists for development and tests (`./.data/pglite`, or in memory in tests). It is **not** used on the VPS: it needs about 300 MB of RAM and got the process restarted by `max_memory_restart` on the 1 GB shared box. Production refuses to start without `DATABASE_URL` unless `ALLOW_PGLITE=1`.
+- Deploy by hand until `scripts/deploy.sh` is updated: build on a laptop (`pnpm --filter @deep-notes/backend build`), upload `dist/`, `migrations/` and a production `package.json` (workspace package removed, because `@deep-notes/shared` is bundled), then `npm install --omit=dev` and `pm2 restart deepnotes-api`. The API process is limited to 250 MB (`--max-memory-restart 250M`).
+- Live check after any deploy: `node agents/e2e-live.mjs <public-url>` (in the hackathon workspace) registers a throwaway user and exercises every main flow with the real models; it deletes its notebook at the end. Last result: 15 of 15 checks passed on 24 Nov 2026.

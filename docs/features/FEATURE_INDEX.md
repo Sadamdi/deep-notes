@@ -17,3 +17,6 @@ One document per feature in `docs/features/<NN-area>/<name>.md`, copied from [_F
 | F-10 | 04-answers | Explanation steps with emotion | P1 | (to write) | planned |
 | F-11 | 09-public | Public notebooks and discovery | P1 | (to write) | planned |
 | F-12 | 03-sources | PPTX, DOCX, links | P2 | (to write) | planned |
+| F-15 | 05-quizzes | Weekly group quiz with scoreboard | P1 | (to write) | planned |
+| F-16 | 08-group | Knowledge gap map | P1 | (to write) | planned |
+| F-17 | 08-group | Study assignments per member | P1 | (to write) | planned |

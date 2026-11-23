@@ -16,7 +16,7 @@ Semifinal (proposal + video) 30 Nov · pengumuman Top 10 7 Des · Final Day 16 D
 Skor 69/100 (satu juri): masalah 3/5, kecocokan case 4/5, nilai dan orisinalitas 3/5, kelayakan 4/5, kejelasan abstrak 4/5. Keluhan: survei hanya 6 orang, perbandingan fitur dengan NotebookLM tidak ada, model belum dipilih. Rinci dan respons: `docs/product/PRELIM_FEEDBACK.md`.
 
 ## Rencana aktif
-`docs/PLAN_SEMIFINAL.md` (fitur F-01..F-14, fase P0..P6, validasi). Semifinal dikumpulkan 30 Nov (proposal maks 10 halaman isi + video maks 2 menit). Deploy: `docs/DEPLOYMENT.md` (dirancang, belum dijalankan). Backend: Express + Drizzle + Supabase (pgvector) + penyedia AI berlapis (Gemini utama, endpoint OpenAI-compatible sebagai cadangan teks).
+`docs/PLAN_SEMIFINAL.md` (fitur F-01..F-17; F-15..F-17 = kuis kelompok mingguan, peta celah pengetahuan, tugas belajar per anggota, fase P0..P6, validasi). Semifinal dikumpulkan 30 Nov (proposal maks 10 halaman isi + video maks 2 menit). Deploy: `docs/DEPLOYMENT.md` (dirancang, belum dijalankan). Backend: Express + Drizzle + Supabase (pgvector) + penyedia AI berlapis (Gemini utama, endpoint OpenAI-compatible sebagai cadangan teks).
 
 ## Status teknis
 - Scaffold selesai: lint, type-check, test (2), build lulus lokal. Belum ada migrasi database, belum ada endpoint selain `/health`, belum ada panggilan AI.

@@ -38,6 +38,9 @@ Priority P0 must exist in a working form for the 30 Nov video and the Final Day 
 | F-12 | More source types: PPTX, DOCX, web link (with SSRF protection) | P2 | meeting 20 Nov |
 | F-13 | Voice input/output | P2 | frontend-only with browser speech APIs; backend not needed |
 | F-14 | Find study partners | later | abstract, not the core |
+| F-15 | Weekly group quiz with scoreboard (same questions for every member, shared deadline) | P1 | group-level differentiator; builds on F-05 and F-08 |
+| F-16 | Knowledge gap map: topics most often missed by members, each linked to cited source pages | P1 | group-level differentiator; extends F-08 |
+| F-17 | Study assignments: each member owns a chapter or topic; group progress on one screen | P1 | group-level differentiator; builds on F-06 |
 
 Rules that apply to every AI feature: answers use only retrieved chunks; a grounded answer needs at least one valid citation; otherwise the answer is `grounded: false` with "not found in the sources" (see [ARCHITECTURE.md](ARCHITECTURE.md)).
 

@@ -20,5 +20,6 @@ Status legend: `done` (exists in the code, tested, verified), `in progress`, `ne
 | P5 (1 to 10 Dec) | F-08 group progress; F-09 exam mode; F-10 explanation steps; F-11 public notebooks | later |
 | P6 (10 to 15 Dec) | hardening, quotas, backups, demo rehearsal | later |
 | Beyond | F-12 PPTX/DOCX/links, F-13 voice, F-14 study partners | later |
+| After P0 | F-15 weekly group quiz, F-16 knowledge gap map, F-17 study assignments (with F-08) | P1 |
 
 Move an item to `done` only when it has a test, a feature doc, and a verified run.

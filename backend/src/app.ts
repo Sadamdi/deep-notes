@@ -4,6 +4,7 @@ import express from "express";
 import helmet from "helmet";
 import { pinoHttp } from "pino-http";
 import { env } from "./config/env.js";
+import { docsRoutes } from "./docs/docs.routes.js";
 import { attachUser } from "./middleware/auth.js";
 import { errorHandler, notFound } from "./middleware/errorHandler.js";
 import { apiRouter } from "./routes.js";
@@ -19,6 +20,7 @@ export function createApp() {
   app.use(attachUser);
   if (env.NODE_ENV !== "test") app.use(pinoHttp());
 
+  app.use("/api/docs", docsRoutes);
   app.use("/api/v1", apiRouter);
   app.use(notFound);
   app.use(errorHandler);

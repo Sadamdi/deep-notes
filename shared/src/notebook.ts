@@ -17,7 +17,7 @@ export const createNotebookSchema = z.object({
 });
 export type CreateNotebookInput = z.infer<typeof createNotebookSchema>;
 
-export const sourceKindSchema = z.enum(["pdf", "text", "docx", "pptx", "link"]);
+export const sourceKindSchema = z.enum(["pdf", "text", "docx", "pptx", "xlsx", "csv", "image", "link"]);
 export type SourceKind = z.infer<typeof sourceKindSchema>;
 
 /** One piece of evidence behind an answer: which source, which page, which passage. */

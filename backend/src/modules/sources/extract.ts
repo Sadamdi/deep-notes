@@ -58,6 +58,90 @@ export async function extractPptx(buf: Buffer): Promise<ExtractedPage[]> {
   return pages;
 }
 
+/** Spreadsheet sheets become "pages": a citation points at the sheet number. Rows are written as "header: value" pairs so retrieval keeps the meaning of each cell. */
+function rowsToText(rows: string[][]): string {
+  if (rows.length === 0) return "";
+  const header = rows[0]!.map((h) => h.trim());
+  const body = rows.slice(1).filter((r) => r.some((c) => c.trim()));
+  if (body.length === 0) return header.join(" | ");
+  return body
+    .slice(0, 2000)
+    .map((r) => r.map((c, i) => (c.trim() ? `${header[i] || `kolom ${i + 1}`}: ${c.trim()}` : "")).filter(Boolean).join("; "))
+    .join("\n");
+}
+
+export function parseCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let cell = "";
+  let quoted = false;
+  const delimiter = (text.split("\n", 1)[0]?.match(/;/g)?.length ?? 0) > (text.split("\n", 1)[0]?.match(/,/g)?.length ?? 0) ? ";" : ",";
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i]!;
+    if (quoted) {
+      if (ch === '"' && text[i + 1] === '"') {
+        cell += '"';
+        i++;
+      } else if (ch === '"') quoted = false;
+      else cell += ch;
+    } else if (ch === '"') quoted = true;
+    else if (ch === delimiter) {
+      row.push(cell);
+      cell = "";
+    } else if (ch === "\n" || ch === "\r") {
+      if (ch === "\r" && text[i + 1] === "\n") i++;
+      row.push(cell);
+      rows.push(row);
+      row = [];
+      cell = "";
+    } else cell += ch;
+  }
+  if (cell || row.length) {
+    row.push(cell);
+    rows.push(row);
+  }
+  return rows;
+}
+
+export function extractCsv(buf: Buffer): ExtractedPage[] {
+  const text = rowsToText(parseCsv(buf.toString("utf8").replace(/^\uFEFF/, "")));
+  return text ? [{ page: null, text }] : [];
+}
+
+export async function extractXlsx(buf: Buffer): Promise<ExtractedPage[]> {
+  const zip = await JSZip.loadAsync(buf);
+  const shared = (await zip.file("xl/sharedStrings.xml")?.async("string")) ?? "";
+  const strings = [...shared.matchAll(/<si>([\s\S]*?)<\/si>/g)].map((m) => decodeXml([...m[1]!.matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map((t) => t[1]).join("")));
+  const sheets = Object.keys(zip.files)
+    .map((n) => /^xl\/worksheets\/sheet(\d+)\.xml$/.exec(n))
+    .filter((m): m is RegExpExecArray => !!m)
+    .map((m) => ({ n: Number(m[1]), name: m[0] }))
+    .sort((a, b) => a.n - b.n);
+  if (!sheets.length) throw new AppError("VALIDATION", "Not a valid XLSX file");
+  const colIndex = (ref: string) => [...ref.replace(/\d+/g, "")].reduce((acc, c) => acc * 26 + c.charCodeAt(0) - 64, 0) - 1;
+  const pages: ExtractedPage[] = [];
+  for (const s of sheets) {
+    const xml = await zip.file(s.name)!.async("string");
+    const rows: string[][] = [];
+    for (const rowMatch of xml.matchAll(/<row[^>]*>([\s\S]*?)<\/row>/g)) {
+      const row: string[] = [];
+      for (const c of rowMatch[1]!.matchAll(/<c ([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
+        const attrs = c[1]!;
+        const ref = /r="([A-Z]+\d+)"/.exec(attrs)?.[1];
+        const type = /t="(\w+)"/.exec(attrs)?.[1];
+        const raw = /<v>([\s\S]*?)<\/v>/.exec(c[2] ?? "")?.[1] ?? /<t[^>]*>([\s\S]*?)<\/t>/.exec(c[2] ?? "")?.[1] ?? "";
+        const value = type === "s" ? (strings[Number(raw)] ?? "") : decodeXml(raw);
+        if (ref) row[colIndex(ref)] = value;
+        else row.push(value);
+      }
+      rows.push(Array.from(row, (v) => v ?? ""));
+    }
+    const text = rowsToText(rows);
+    if (text) pages.push({ page: s.n, text });
+  }
+  return pages;
+}
+
 // ---- links with SSRF protection -------------------------------------------------------------------
 
 export function isPrivateAddress(ip: string): boolean {

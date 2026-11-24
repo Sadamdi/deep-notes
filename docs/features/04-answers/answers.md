@@ -15,3 +15,4 @@ Business rules
 - BR-06 Asking is limited to 40 AI requests per user per 10 minutes. Viewers may ask.
 - BR-07 F-10: the explanation comes as 3 to 6 short steps, each with an `emotion` (neutral, curious, happy, thinking, encouraging, concerned) for the animated companion. Every step is complete text, so the animation is optional. If nothing is found, one `concerned` step carries the refusal.
 - BR-08 Every question is stored with who asked it and feeds the contributions view.
+- BR-09 The companion explanation (`POST /notebooks/:id/companion/explain`) follows the same grounding rules and returns a performance of beats; see [../../COMPANION_CONTRACT.md](../../COMPANION_CONTRACT.md). The model may only choose animations from a closed list; anything else is replaced by the default clip for the beat's emotion, and a beat citing a source that was not retrieved gets no citation.

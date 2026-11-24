@@ -58,10 +58,22 @@ export const fakeAi: AiProvider = {
     }
     if (best.overlap < 2) {
       return opts.purpose === "explain"
-        ? opts.schema.parse({ grounded: false, steps: [], citations: [] })
+        ? opts.schema.parse(opts.system.includes('"beats"') ? { grounded: false, beats: [], citations: [] } : { grounded: false, steps: [], citations: [] })
         : opts.schema.parse({ grounded: false, answer: "", citations: [] });
     }
     const quote = best.text.slice(0, 50);
+    if (opts.system.includes('"beats"')) {
+      return opts.schema.parse({
+        grounded: true,
+        beats: [
+          { say: "Halo, kita mulai dari sumbernya.", emotion: "happy", animation: "wave", cite: null },
+          { say: best.text.slice(0, 80), emotion: "neutral", animation: "moonwalk", cite: best.n },
+          { say: "Paham sampai sini?", emotion: "curious", animation: "lean_in", cite: 99 },
+        ],
+        citations: [{ n: best.n, quote }],
+        followUps: ["Apa lagi yang ingin kamu tahu?"],
+      });
+    }
     return opts.purpose === "explain"
       ? opts.schema.parse({
           grounded: true,
@@ -151,5 +163,21 @@ export async function makeDocx(paragraphs: string[]): Promise<Buffer> {
 export async function makePptx(slides: string[]): Promise<Buffer> {
   const zip = new JSZip();
   slides.forEach((s, i) => zip.file(`ppt/slides/slide${i + 1}.xml`, `<p:sld><a:p><a:r><a:t>${s}</a:t></a:r></a:p></p:sld>`));
+  return zip.generateAsync({ type: "nodebuffer" });
+}
+
+export async function makeXlsx(rows: string[][]): Promise<Buffer> {
+  const zip = new JSZip();
+  const strings: string[] = [];
+  const idx = (v: string) => {
+    const i = strings.indexOf(v);
+    return i >= 0 ? i : strings.push(v) - 1;
+  };
+  const col = (i: number) => String.fromCharCode(65 + i);
+  const xmlRows = rows
+    .map((r, ri) => `<row r="${ri + 1}">${r.map((v, ci) => `<c r="${col(ci)}${ri + 1}" t="s"><v>${idx(v)}</v></c>`).join("")}</row>`)
+    .join("");
+  zip.file("xl/sharedStrings.xml", `<sst>${strings.map((v) => `<si><t>${v}</t></si>`).join("")}</sst>`);
+  zip.file("xl/worksheets/sheet1.xml", `<worksheet><sheetData>${xmlRows}</sheetData></worksheet>`);
   return zip.generateAsync({ type: "nodebuffer" });
 }

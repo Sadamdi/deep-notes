@@ -73,7 +73,7 @@ All paths are under `/api/v1`. Every route except `/health`, `/auth/register` an
 ### Sources (F-03, F-12)
 | Method | Path | Body | Result |
 |---|---|---|---|
-| POST | `/notebooks/:id/sources/file` | multipart `file` (PDF, TXT, MD, DOCX, PPTX, 15 MB), optional `title` | `202 {id, status: "processing"}` |
+| POST | `/notebooks/:id/sources/file` | multipart `file` (PDF, TXT, MD, DOCX, PPTX, XLSX, CSV, PNG, JPG, WEBP; 15 MB), optional `title` | `202 {id, status: "processing"}` |
 | POST | `/notebooks/:id/sources/text` | `{title, text}` | `202` |
 | POST | `/notebooks/:id/sources/link` | `{url, title?}` | `202` (private addresses are refused) |
 | GET | `/notebooks/:id/sources` | none | sources with `status` (`processing`, `ready`, `failed`), `error`, `pageCount`, `chunkCount`; poll until `ready` |
@@ -101,6 +101,14 @@ Scanned PDFs (no text layer) are accepted: the response is the same `202`, and t
 | GET | `/notebooks/:id/quizzes/:quizId/scoreboard` | none | `{ranking: [{rank, name, score, total, durationMs}], notYetTaken}` |
 | GET | `/notebooks/:id/quizzes/:quizId/attempts/mine` | none | my attempts |
 | DELETE | `/notebooks/:id/quizzes/:quizId` | none | the creator or the owner |
+
+### Study companion (F-10)
+Full description for the frontend: [COMPANION_CONTRACT.md](COMPANION_CONTRACT.md).
+| Method | Path | Body | Result |
+|---|---|---|---|
+| GET | `/companion/catalog` | none | no login: `{mascots, animations, emotions, styles, levels, reactions, sourceKinds, upload}` |
+| GET | `/companion/demo?scenario=explain\|notfound` | none | no login: a sample `performance` |
+| POST | `/notebooks/:id/companion/explain` | `{question, mascotId?, style?: teacher\|friend\|coach, level?: simple\|normal\|detailed}` | `{questionId, question, performance: {id, mascotId, style, level, grounded, beats[{index, say, emotion, animation, citation, durationMs, voiceNoteId}], citations[], followUps[]}}` |
 
 ### Group views (F-06, F-08, F-16, F-17)
 | Method | Path | Body | Result |

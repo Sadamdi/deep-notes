@@ -11,7 +11,9 @@ import { notebookAccess, requireAuth } from "../../middleware/auth.js";
 import { validate } from "../../middleware/validate.js";
 import {
   MAX_FILE_BYTES,
+  extractCsv,
   extractDocx,
+  extractXlsx,
   extractPdf,
   extractPlain,
   extractPptx,
@@ -30,14 +32,22 @@ export const MAX_SOURCES_PER_NOTEBOOK = 40;
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: MAX_FILE_BYTES, files: 1 } });
 
-const KIND_BY_EXT: Record<string, "pdf" | "text" | "docx" | "pptx"> = {
+const KIND_BY_EXT: Record<string, "pdf" | "text" | "docx" | "pptx" | "xlsx" | "csv" | "image"> = {
   ".pdf": "pdf",
   ".txt": "text",
   ".md": "text",
   ".markdown": "text",
   ".docx": "docx",
   ".pptx": "pptx",
+  ".xlsx": "xlsx",
+  ".csv": "csv",
+  ".png": "image",
+  ".jpg": "image",
+  ".jpeg": "image",
+  ".webp": "image",
 };
+
+const IMAGE_MIME: Record<string, string> = { ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp" };
 
 const startsWith = (buf: Buffer, sig: string) => buf.subarray(0, sig.length).toString("latin1") === sig;
 
@@ -65,12 +75,13 @@ sourceRoutes.post(
     if (!f) throw new AppError("VALIDATION", "Attach a file in the 'file' field");
     const ext = path.extname(f.originalname).toLowerCase();
     const kind = KIND_BY_EXT[ext];
-    if (!kind) throw new AppError("VALIDATION", "Supported files: PDF, TXT, MD, DOCX, PPTX");
+    if (!kind) throw new AppError("VALIDATION", "Supported files: PDF, TXT, MD, DOCX, PPTX, XLSX, CSV, PNG, JPG, WEBP");
     if (kind === "pdf" && !startsWith(f.buffer, "%PDF")) throw new AppError("VALIDATION", "The file is not a real PDF");
-    if ((kind === "docx" || kind === "pptx") && !startsWith(f.buffer, "PK")) throw new AppError("VALIDATION", `The file is not a real ${ext.slice(1).toUpperCase()}`);
+    if (kind === "image" && !(startsWith(f.buffer, "\x89PNG") || startsWith(f.buffer, "\xFF\xD8") || startsWith(f.buffer, "RIFF"))) throw new AppError("VALIDATION", "The file is not a real image");
+    if ((kind === "docx" || kind === "pptx" || kind === "xlsx") && !startsWith(f.buffer, "PK")) throw new AppError("VALIDATION", `The file is not a real ${ext.slice(1).toUpperCase()}`);
     let pages: ExtractedPage[];
     try {
-      pages = kind === "pdf" ? await extractPdf(f.buffer) : kind === "docx" ? await extractDocx(f.buffer) : kind === "pptx" ? await extractPptx(f.buffer) : extractPlain(f.buffer);
+      pages = kind === "image" ? [] : kind === "csv" ? extractCsv(f.buffer) : kind === "xlsx" ? await extractXlsx(f.buffer) : kind === "pdf" ? await extractPdf(f.buffer) : kind === "docx" ? await extractDocx(f.buffer) : kind === "pptx" ? await extractPptx(f.buffer) : extractPlain(f.buffer);
     } catch (e) {
       if (e instanceof AppError) throw e;
       throw new AppError("VALIDATION", "The file could not be read");
@@ -78,10 +89,11 @@ sourceRoutes.post(
     let input: PagesInput = pages;
     if (!pages.length) {
       // a PDF without a text layer is a scan: read it with a vision model in the background
-      if (kind !== "pdf" || env.GEMINI_API_KEYS.length === 0) throw new AppError("VALIDATION", "No readable text found in this file");
+      if ((kind !== "pdf" && kind !== "image") || env.GEMINI_API_KEYS.length === 0) throw new AppError("VALIDATION", "No readable text found in this file");
       if (f.size > 12 * 1024 * 1024) throw new AppError("VALIDATION", "Scanned PDFs are limited to 12 MB");
       const data = f.buffer;
-      input = async () => (await getAi().ocr(data, "application/pdf")).map((p) => ({ page: p.page, text: p.text }));
+      const mime = kind === "image" ? IMAGE_MIME[ext]! : "application/pdf";
+      input = async () => (await getAi().ocr(data, mime)).map((p) => ({ page: kind === "image" ? null : p.page, text: p.text }));
     }
     const title = typeof req.body?.title === "string" && req.body.title.trim() ? req.body.title.trim().slice(0, 160) : path.basename(f.originalname, ext);
     res.status(202).json(ok(await createSource(req, title, kind, null, input)));

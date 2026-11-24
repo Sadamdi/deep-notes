@@ -15,3 +15,4 @@ Business rules
 - BR-05 Links: only http and https, no credentials in the URL, every address the host resolves to must be public (blocks loopback, private, link-local and cloud metadata ranges), redirects are re-checked up to 3 hops, 2 MB and 15 s limits, only HTML or plain text. Known gap: the address is checked before the request, not pinned during it (DNS rebinding); acceptable for the demo, to be closed with a pinned resolver.
 - BR-06 Only the uploader or the owner can delete a source; editors and owners can add.
 - BR-07 Uploaded text is treated as data. Prompts tell the model to ignore instructions found inside sources (see F-04).
+- BR-09 Spreadsheets: XLSX sheets become numbered pages and each row is stored as `column: value` pairs; CSV handles quotes, BOM and semicolons. Images (PNG, JPG, WEBP) are read by the vision model like scanned pages. At most 2000 rows per sheet are indexed.

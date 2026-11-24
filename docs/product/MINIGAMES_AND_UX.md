@@ -1,6 +1,6 @@
 # Minigame dan alur UX (konsep)
 
-Wireframe: [../design/wireframes/](../design/wireframes/) (PNG dan file FigCraft `deep-notes-ui-ux.figcraft`). Dibuat dengan FigCraft lewat `figcraft-cli run`; skrip pembuatnya ada di workspace `agents/work/2026-11-24-figcraft/`. Ini wireframe, bukan desain akhir: tim desain bebas mengubah gaya.
+Wireframe: [../design/](../design/wireframes/) (PNG dan file FigCraft `deep-notes-ui-ux-lengkap.figcraft`). Dibuat dengan FigCraft lewat `figcraft-cli run`; skrip pembuatnya ada di workspace `agents/work/2026-11-24-figcraft/`. Ini wireframe, bukan desain akhir: tim desain bebas mengubah gaya.
 
 ## Alur layar
 1. **Beranda:** feed sosial seperti thread (posting teks, lampiran workspace, bagikan hasil kuis, suka dan balas).

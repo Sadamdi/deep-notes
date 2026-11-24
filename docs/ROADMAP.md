@@ -11,6 +11,7 @@ Status legend: `done` (exists in the code, tested, verified), `in progress`, `ne
 | Foundation | repo, workspace, CI, shared contract, health endpoint, base UI, docs and agent rules | done (scaffold) |
 | P0 to P4 backend (done 24 Nov, ahead of plan) | F-01..F-07 accounts, notebooks, ingestion (PDF, text, DOCX, PPTX, links), cited answers, quizzes, contributions, grounding evaluation | done on the backend: 44 automated tests, live check 15 of 15 against real models and database |
 | P5 backend (done 24 Nov) | F-08, F-09, F-10, F-11, F-14, F-15, F-16, F-17 | done on the backend, same tests |
+| Play and feed (25 Nov) | F-18 game sessions (7 game types, automatic choice, duel and group), points, streak, badges, F-19 teach-back, F-20 mind map, F-21 social feed, reference sources | done on the backend, tested with a fake model; live check with real models below |
 | Server | API on the shared VPS behind a Cloudflare quick tunnel, Supabase database | running; tunnel URL changes on restart, stable domain still to decide |
 | Next (Adam) | rotate exposed secrets; enlarge evaluation with real course material; survey to 30 or more answers; proposal and video | next |
 | Next (frontend, other members) | screens for every endpoint in API_CONTRACT.md; companion animation using `emotion`; F-13 voice with browser speech APIs | next |

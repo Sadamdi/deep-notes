@@ -68,6 +68,7 @@ export const explainRequestSchema = z.object({
   mascotId: z.string().max(40).optional(),
   style: mascotRoleSchema.default("teacher"),
   level: explainLevelSchema.default("normal"),
+  sourceIds: z.array(z.string().uuid()).min(1).max(40).optional(),
 });
 export type ExplainRequest = z.infer<typeof explainRequestSchema>;
 

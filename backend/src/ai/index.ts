@@ -8,7 +8,7 @@ export interface GenerateJsonOptions<T> {
   user: string;
   schema: ZodType<T>;
   /** lets tests and logs tell requests apart */
-  purpose: "answer" | "quiz" | "explain" | "other";
+  purpose: "answer" | "quiz" | "explain" | "game" | "teach" | "visual" | "other";
 }
 
 export interface AiProvider {

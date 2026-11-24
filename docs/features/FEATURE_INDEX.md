@@ -22,3 +22,7 @@ One document per feature area in `docs/features/<NN-area>/<name>.md`, copied fro
 | F-15 | 05-quizzes | Weekly group quiz with scoreboard | P1 | [quizzes.md](05-quizzes/quizzes.md) | implemented (backend) |
 | F-16 | 08-group | Knowledge gap map | P1 | [group.md](08-group/group.md) | implemented (backend) |
 | F-17 | 08-group | Study assignments per member | P1 | [group.md](08-group/group.md) | implemented (backend) |
+| F-18 | 10-play | Game sessions: automatic game choice, 7 game types, points, streak, badges, duel and group | P1 | [play.md](10-play/play.md) | implemented (backend) |
+| F-19 | 04-answers | Teach-back: explain to the mascot | P1 | [play.md](10-play/play.md) | implemented (backend) |
+| F-20 | 03-sources | Mind map of a source | P2 | [play.md](10-play/play.md) | implemented (backend) |
+| F-21 | 11-feed | Social feed: posts, likes, comments, follows | P1 | [feed.md](11-feed/feed.md) | implemented (backend) |

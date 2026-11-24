@@ -53,6 +53,7 @@ export const generateQuizSchema = z.object({
   count: z.number().int().min(3).max(20).default(5),
   topic: z.string().trim().max(120).optional(),
   sourceId: z.string().uuid().optional(),
+  sourceIds: z.array(z.string().uuid()).min(1).max(40).optional(),
   timeLimitSec: z.number().int().min(30).max(7200).optional(),
   perQuestionSec: z.number().int().min(5).max(600).optional(),
   dueAt: z.string().datetime().optional(),

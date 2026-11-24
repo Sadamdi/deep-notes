@@ -19,15 +19,16 @@ export interface Retrieved {
   distance: number;
 }
 
-export async function retrieve(notebookId: string, question: string, k = TOP_K): Promise<Retrieved[]> {
+export async function retrieve(notebookId: string, question: string, k = TOP_K, sourceIds?: string[]): Promise<Retrieved[]> {
   const [qv] = await getAi().embed([question], "RETRIEVAL_QUERY");
   const rows = await (await getDb()).query(
     `SELECT c.id, c.source_id AS "sourceId", s.title AS "sourceTitle", c.page, c.content,
             (c.embedding <=> $2::vector)::float8 AS distance
      FROM source_chunks c JOIN sources s ON s.id = c.source_id
      WHERE c.notebook_id = $1 AND s.status = 'ready' AND c.embedding IS NOT NULL
+       AND ($4::uuid[] IS NULL OR c.source_id = ANY($4::uuid[]))
      ORDER BY c.embedding <=> $2::vector LIMIT $3`,
-    [notebookId, toVector(qv!), k],
+    [notebookId, toVector(qv!), k, sourceIds?.length ? sourceIds : null],
   );
   return rows as Retrieved[];
 }
@@ -76,8 +77,8 @@ export type AskResult =
 
 const notFound = (): AskResult => ({ grounded: false, text: NOT_FOUND_TEXT, citations: [] });
 
-export async function answerQuestion(notebookId: string, question: string): Promise<AskResult> {
-  const chunks = await retrieve(notebookId, question);
+export async function answerQuestion(notebookId: string, question: string, sourceIds?: string[]): Promise<AskResult> {
+  const chunks = await retrieve(notebookId, question, TOP_K, sourceIds);
   if (!chunks.length || chunks[0]!.distance > MAX_DISTANCE) return notFound();
   const res = await getAi().generateJson({
     purpose: "answer",
@@ -95,9 +96,9 @@ export type ExplainResult =
   | { grounded: false; steps: ExplanationStep[]; citations: [] };
 
 /** F-10: the same grounding rules, but the answer comes as short steps, each with an emotion for the companion. */
-export async function explainQuestion(notebookId: string, question: string): Promise<ExplainResult> {
+export async function explainQuestion(notebookId: string, question: string, sourceIds?: string[]): Promise<ExplainResult> {
   const none: ExplainResult = { grounded: false, steps: [{ text: NOT_FOUND_TEXT, emotion: "concerned" }], citations: [] };
-  const chunks = await retrieve(notebookId, question);
+  const chunks = await retrieve(notebookId, question, TOP_K, sourceIds);
   if (!chunks.length || chunks[0]!.distance > MAX_DISTANCE) return none;
   const res = await getAi().generateJson({
     purpose: "explain",

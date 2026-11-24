@@ -6,7 +6,7 @@ import { getDb } from "../../db/index.js";
 import { AppError } from "../../lib/errors.js";
 import { retrieve } from "../answers/answers.service.js";
 
-interface Passage {
+export interface Passage {
   sourceId: string;
   sourceTitle: string;
   page: number | null;
@@ -24,17 +24,24 @@ const llmItem = z.object({
 const llmQuiz = z.object({ items: z.array(llmItem).min(1) });
 
 /** Picks passages spread across the notebook's ready sources (or the ones closest to a topic). */
-async function pickPassages(notebookId: string, count: number, opts: { topic?: string; sourceId?: string }): Promise<Passage[]> {
+export interface PassageOpts {
+  topic?: string;
+  sourceId?: string;
+  sourceIds?: string[];
+}
+
+export async function pickPassages(notebookId: string, count: number, opts: PassageOpts): Promise<Passage[]> {
+  const only = opts.sourceIds?.length ? opts.sourceIds : opts.sourceId ? [opts.sourceId] : undefined;
   const db = await getDb();
   if (opts.topic) {
-    const hits = (await retrieve(notebookId, opts.topic, count * 2)).filter((h) => !opts.sourceId || h.sourceId === opts.sourceId);
+    const hits = await retrieve(notebookId, opts.topic, count * 2, only);
     return hits.slice(0, count);
   }
   const rows = await db.query<Passage>(
     `SELECT c.source_id AS "sourceId", s.title AS "sourceTitle", c.page, c.content
      FROM source_chunks c JOIN sources s ON s.id = c.source_id
-     WHERE c.notebook_id = $1 AND s.status = 'ready' AND length(c.content) >= 120 AND ($2::text IS NULL OR s.id::text = $2)`,
-    [notebookId, opts.sourceId ?? null],
+     WHERE c.notebook_id = $1 AND s.status = 'ready' AND length(c.content) >= 120 AND ($2::uuid[] IS NULL OR s.id = ANY($2::uuid[]))`,
+    [notebookId, only ?? null],
   );
   // shuffle, then round-robin across sources so one long file does not dominate
   const shuffled = rows.sort(() => crypto.randomInt(0, 2) - 0.5);
@@ -55,7 +62,7 @@ function shuffleOptions(item: { options: string[]; answerIndex: number }): { opt
   return { options: idx.map((i) => item.options[i]!), answerIndex: idx.indexOf(item.answerIndex) };
 }
 
-export async function generateItems(notebookId: string, count: number, opts: { topic?: string; sourceId?: string }): Promise<QuizItem[]> {
+export async function generateItems(notebookId: string, count: number, opts: PassageOpts): Promise<QuizItem[]> {
   const passages = await pickPassages(notebookId, count, opts);
   if (passages.length < 3) throw new AppError("CONFLICT", "Add more sources first: a quiz needs at least 3 readable passages");
   const res = await getAi().generateJson({

@@ -139,3 +139,8 @@ Do not build UI that depends on a planned item before the backend marks it imple
 ## 8. Errors the player must handle
 
 Same envelope as the rest of the API: `{ success: false, error: { code, message } }`. Common codes: `UNAUTHORIZED` (sign in), `NOT_FOUND` (not a member), `RATE_LIMITED` (40 AI requests per 10 minutes; play `sleepy` or a "rest a moment" message), `VALIDATION`.
+
+## 9. Tambahan (25 Nov)
+- `POST /notebooks/:id/companion/teach-back`: pemain menjelaskan, maskot menilai dan membalas sebagai murid. Lihat [GAME_CONTRACT.md](GAME_CONTRACT.md).
+- `sourceIds` pada `/companion/explain` membatasi jawaban ke sumber acuan yang dipilih.
+- `GET /notebooks/:id/sources/:sourceId/visual?kind=mindmap` memberi data peta konsep (simpul dan garis) untuk panel visualisasi.

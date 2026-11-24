@@ -122,6 +122,33 @@ Full description for the frontend: [COMPANION_CONTRACT.md](COMPANION_CONTRACT.md
 ### Limits
 20 notebooks owned per user, 50 members and 40 sources per notebook, 100 quizzes per notebook, 15 MB per file (12 MB for scanned PDFs), 40 questions per 10 minutes and 12 quiz generations per 10 minutes per user. Exceeding a count limit returns `409 CONFLICT`, exceeding a rate limit returns `429 RATE_LIMITED`.
 
+### Game sessions, points and teach-back (F-18, F-19, F-20)
+Full description: [GAME_CONTRACT.md](GAME_CONTRACT.md).
+| Method | Path | Body | Result |
+|---|---|---|---|
+| POST | `/notebooks/:id/sessions` | `{mode?: solo\|duel\|group, rounds?, focusTopic?, gameTypes?, sourceIds?}` | `201` session with planned rounds (items without answers) |
+| GET | `/notebooks/:id/sessions`, `/sessions/:sid`, `/sessions/:sid/scoreboard` | none | list, state (poll for duel), live ranking |
+| POST | `/notebooks/:id/sessions/:sid/join`, `/start` | none | duel and group lobby |
+| POST | `/notebooks/:id/sessions/:sid/rounds/:n/answer` | `{answers[], elapsedMs?}` | graded results, points, mascot reaction |
+| POST | `/notebooks/:id/sessions/:sid/finish` | none | points, streak, badges, weak topics, rank |
+| GET | `/me/stats` | none | points, streak, badges |
+| POST | `/notebooks/:id/companion/teach-back` | `{topic, explanation, sourceIds?}` | `{evaluation, performance}` |
+| GET | `/notebooks/:id/sources/:sourceId/visual?kind=mindmap` | none | `{nodes, edges}` with page references |
+
+`sourceIds` (reference sources) is accepted by `/ask`, `/explain`, `/companion/explain`, quiz generation and sessions.
+
+### Feed (F-21)
+| Method | Path | Body | Result |
+|---|---|---|---|
+| POST | `/posts` | `{body, attach?}` | `201` post with `card` |
+| GET | `/feed?scope=all\|following&limit&before` | none | `{posts, nextBefore}` |
+| GET, DELETE | `/posts/:id` | none | one post; delete mine |
+| POST, DELETE | `/posts/:id/like` | none | `{liked, likes}` |
+| GET, POST | `/posts/:id/comments` | POST `{body}` | comments |
+| DELETE | `/posts/:id/comments/:commentId` | none | commenter or post author |
+| POST, DELETE | `/users/:userId/follow` | none | follow state |
+| GET | `/users/:userId` | none | public profile (no email) |
+
 ### Platform
 | Method | Path | Result |
 |---|---|---|

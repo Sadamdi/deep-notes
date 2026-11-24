@@ -65,7 +65,7 @@ export function notFoundPerformance(req: Pick<ExplainRequest, "style" | "level">
 
 export async function explainAsPerformance(notebookId: string, req: ExplainRequest): Promise<Performance> {
   const mascotId = MASCOTS.some((m) => m.id === req.mascotId) ? req.mascotId! : (MASCOTS.find((m) => m.role === req.style)?.id ?? "kiko");
-  const chunks = await retrieve(notebookId, req.question);
+  const chunks = await retrieve(notebookId, req.question, 6, req.sourceIds);
   if (!chunks.length || chunks[0]!.distance > MAX_DISTANCE) return notFoundPerformance(req, mascotId);
 
   const res = await getAi().generateJson({

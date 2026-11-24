@@ -20,8 +20,8 @@ answerRoutes.post(
   aiLimit,
   validate("body", askQuestionSchema),
   asyncHandler(async (req, res) => {
-    const { question } = req.body as { question: string };
-    const result = await answerQuestion(req.member!.notebookId, question);
+    const { question, sourceIds } = req.body as { question: string; sourceIds?: string[] };
+    const result = await answerQuestion(req.member!.notebookId, question, sourceIds);
     const rows = await (await getDb()).query<{ id: string; created_at: Date }>(
       "INSERT INTO questions(notebook_id, asked_by, question, grounded, answer, citations) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id, created_at",
       [req.member!.notebookId, req.user!.id, question, result.grounded, result.text, JSON.stringify(result.citations)],
@@ -37,8 +37,8 @@ answerRoutes.post(
   aiLimit,
   validate("body", askQuestionSchema),
   asyncHandler(async (req, res) => {
-    const { question } = req.body as { question: string };
-    const result = await explainQuestion(req.member!.notebookId, question);
+    const { question, sourceIds } = req.body as { question: string; sourceIds?: string[] };
+    const result = await explainQuestion(req.member!.notebookId, question, sourceIds);
     const text = result.steps.map((s) => s.text).join("\n");
     const rows = await (await getDb()).query<{ id: string }>(
       "INSERT INTO questions(notebook_id, asked_by, question, grounded, answer, citations, steps) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id",

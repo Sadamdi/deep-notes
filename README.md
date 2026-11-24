@@ -36,6 +36,7 @@ AI hadir sebagai **teman belajar atau guru** berbentuk maskot. Backend menulis "
 | **Teman belajar** | penjelasan langkah demi langkah dengan emosi dan gerakan maskot (guru, teman, pelatih; level sederhana sampai rinci) | ✅ |
 | **Kuis** | latihan, ujian bertimer (jam di server), kuis mingguan dengan scoreboard kelompok | ✅ |
 | **Pembeda kelompok** | kontribusi anggota, progres, peta celah pengetahuan ke halaman sumber, tugas belajar per anggota, partner belajar | ✅ |
+| **Game dan sosial** | sesi game otomatis (7 jenis soal), duel dan kelompok, poin, streak, lencana, jelaskan ke maskot, peta konsep, feed sosial | ✅ |
 | **Bukti mutu** | skrip evaluasi grounding dengan laporan bertanggal | ✅ |
 | Suara maskot, audio dan rekaman kuliah, visualisasi catatan | | 🕓 direncanakan |
 

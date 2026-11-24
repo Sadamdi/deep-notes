@@ -35,6 +35,7 @@ export const fakeAi: AiProvider = {
   },
   async generateJson(opts) {
     const user = opts.user;
+    if (opts.purpose === "game" || opts.purpose === "teach" || opts.purpose === "visual") return fakeGame(opts);
     if (opts.purpose === "quiz") {
       const passages = [...user.matchAll(/PASSAGE (\d+):\n([\s\S]*?)(?=\n\nPASSAGE \d+:|$)/g)];
       return opts.schema.parse({
@@ -180,4 +181,40 @@ export async function makeXlsx(rows: string[][]): Promise<Buffer> {
   zip.file("xl/sharedStrings.xml", `<sst>${strings.map((v) => `<si><t>${v}</t></si>`).join("")}</sst>`);
   zip.file("xl/worksheets/sheet1.xml", `<worksheet><sheetData>${xmlRows}</sheetData></worksheet>`);
   return zip.generateAsync({ type: "nodebuffer" });
+}
+
+const passagesOf = (user: string) => [...user.matchAll(/PASSAGE (\d+):\n([\s\S]*?)(?=\n\nPASSAGE \d+:|$)/g)].map((m) => ({ n: Number(m[1]), text: m[2]! }));
+const bigWord = (t: string) => t.split(/[^\p{L}]+/u).find((w) => w.length >= 7) ?? "jaringan";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function fakeGame(opts: { purpose: string; system: string; user: string; schema: { parse: (x: unknown) => any } }) {
+  const sys = opts.system;
+  if (opts.purpose === "teach") {
+    const explanation = /PENJELASAN PEMAIN:\n([\s\S]*)$/.exec(opts.user)?.[1] ?? "";
+    const source = /SUMBER:\n([\s\S]*?)\n\nTOPIK:/.exec(opts.user)?.[1] ?? "";
+    const src = new Set(tokens(source));
+    const exp = tokens(explanation);
+    const hit = exp.filter((t) => src.has(t)).length;
+    const ratio = exp.length ? hit / Math.min(exp.length, 12) : 0;
+    const understood = ratio >= 0.75 ? "yes" : ratio >= 0.2 ? "partly" : "no";
+    return opts.schema.parse({ understood, score: Math.round(Math.min(1, ratio) * 100), covered: ["poin utama"], missing: understood === "yes" ? [] : ["detail switch pusat"], wrong: [], reply: understood === "yes" ? "Aku paham sekarang!" : "Hmm, aku masih bingung bagian switch pusatnya.", citations: [{ n: 1, quote: "" }] });
+  }
+  if (opts.purpose === "visual") {
+    return opts.schema.parse({ nodes: [{ id: "a", label: "Topologi", page: null, level: 0 }, { id: "b", label: "Bintang", page: 99, level: 1 }, { id: "c", label: "Switch pusat", page: null, level: 2 }], edges: [{ from: "a", to: "b", label: "jenis" }, { from: "b", to: "c", label: "memakai" }, { from: "b", to: "zzz", label: "rusak" }] });
+  }
+  const ps = passagesOf(opts.user);
+  if (sys.includes("TIPE:topic")) return opts.schema.parse({ topic: "Topik Uji" });
+  if (sys.includes("TIPE:fill")) {
+    return opts.schema.parse({ items: ps.map((p) => { const w = bigWord(p.text); return { n: p.n, prompt: p.text.replace(w, "____").slice(0, 160), answer: w, accept: [], explanation: "Lihat passage.", topic: "Topik " + p.n }; }) });
+  }
+  if (sys.includes("TIPE:tf")) {
+    return opts.schema.parse({ items: ps.map((p, i) => ({ n: p.n, statement: (i % 2 === 0 ? "" : "Tidak benar: ") + p.text.slice(0, 80), truth: i % 2 === 0, explanation: "Lihat passage.", topic: "Topik " + p.n })) });
+  }
+  if (sys.includes("TIPE:order")) {
+    return opts.schema.parse({ items: ps.slice(0, 2).map((p) => ({ n: p.n, prompt: "Urutkan langkahnya", steps: [...p.text.split(/(?<=[.!?])\s+/), "langkah tambahan satu", "langkah tambahan dua"].slice(0, 3).map((x) => x.slice(0, 40)), explanation: "Lihat passage.", topic: "Proses " + p.n })) });
+  }
+  if (sys.includes("TIPE:match")) {
+    return opts.schema.parse({ items: ps.slice(0, 1).map((p) => ({ n: p.n, prompt: "Pasangkan", pairs: ["alfa", "beta", "gama", "delta"].map((w) => ({ left: w, right: "arti " + w })), explanation: "Lihat passage.", topic: "Istilah " + p.n })) });
+  }
+  throw new Error("fake game: unknown type");
 }

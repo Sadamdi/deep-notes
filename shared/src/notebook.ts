@@ -31,6 +31,8 @@ export type Citation = z.infer<typeof citationSchema>;
 
 export const askQuestionSchema = z.object({
   question: z.string().trim().min(3).max(1000),
+  /** limit the answer to these sources (the "reference" picker); omit for all sources */
+  sourceIds: z.array(z.string().uuid()).min(1).max(40).optional(),
 });
 export type AskQuestionInput = z.infer<typeof askQuestionSchema>;
 

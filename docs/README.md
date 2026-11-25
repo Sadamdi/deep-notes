@@ -9,6 +9,8 @@
 | [product/COMPETITIVE_ANALYSIS.md](product/COMPETITIVE_ANALYSIS.md) | verified comparison with existing tools; what is and is not a differentiator |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | server topology, one-time setup, deploy and rollback, environment variables, secret rotation |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | system layout, data flow, retrieval and citation design |
+| [ENVIRONMENTS.md](ENVIRONMENTS.md) | **alamat server demo**, cara mencoba API, proxy frontend, aturan memakai server bersama |
+| [GAME_CONTRACT.md](GAME_CONTRACT.md) | sesi game, jenis soal, poin, duel, feed |
 | [API_CONTRACT.md](API_CONTRACT.md) | response envelope, error codes, pagination, endpoint list (live Swagger UI at `/api/docs`) |
 | [COMPANION_CONTRACT.md](COMPANION_CONTRACT.md) | **for the frontend and designers**: mascot performance format, the closed list of animations, reactions, upload types |
 | [SOP/](SOP/) | working procedures: development workflow, API design and errors, documentation maintenance |

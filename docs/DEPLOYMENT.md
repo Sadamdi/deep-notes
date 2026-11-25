@@ -119,3 +119,10 @@ Rules learned the hard way:
 - An embedded PGlite database exists for development and tests (`./.data/pglite`, or in memory in tests). It is **not** used on the VPS: it needs about 300 MB of RAM and got the process restarted by `max_memory_restart` on the 1 GB shared box. Production refuses to start without `DATABASE_URL` unless `ALLOW_PGLITE=1`.
 - Deploy by hand until `scripts/deploy.sh` is updated: build on a laptop (`pnpm --filter @deep-notes/backend build`), upload `dist/`, `migrations/` and a production `package.json` (workspace package removed, because `@deep-notes/shared` is bundled), then `npm install --omit=dev` and `pm2 restart deepnotes-api`. The API process is limited to 250 MB (`--max-memory-restart 250M`).
 - Live check after any deploy: `node agents/e2e-live.mjs <public-url>` (in the hackathon workspace) registers a throwaway user and exercises every main flow with the real models; it deletes its notebook at the end. Last result: 15 of 15 checks passed on 24 Nov 2026.
+
+### 9.2 Stable public address (25 Nov 2026)
+The API is reachable at **https://deepnotes-api.vercel.app** through a small gateway on Vercel (project `deepnotes-api`, free plan, source in `deploy/gateway/`). It forwards `/api/*` to the current tunnel address read from `deploy/server-url.json` on `main`, so frontend code never depends on the tunnel address.
+- After a tunnel restart: `DEPLOY_HOST=root@<server-ip> node scripts/update-server-url.mjs`, then commit and push. The gateway uses the new address within about half a minute.
+- Redeploy the gateway only when `deploy/gateway/` changes (Vercel dashboard or the Vercel MCP `create_deployment` with those files). It has no secrets and no environment variables.
+- Limits: request bodies up to about 4.5 MB (Vercel), so uploads above that fail with `413` through the gateway; the server itself accepts 15 MB. Anyone who can push to `main` can repoint the gateway, so keep push access small.
+- A permanent fix needs a domain on Cloudflare and a named tunnel (free tunnel, domain costs); then the gateway becomes unnecessary.

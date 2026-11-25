@@ -1,7 +1,8 @@
 // Stable front door for the Deep Notes API (free, on Vercel).
 //
 // The real backend runs on a small server behind a Cloudflare quick tunnel whose address changes when it restarts.
-// This function keeps ONE stable address: it forwards every /api/* request to the current origin, which it reads from
+// This function keeps ONE stable address: vercel.json rewrites every /api/* request here (the original path arrives in
+// the `__p` query parameter), and the function forwards it to the current origin, which it reads from
 // deploy/server-url.json in the public repository (updated by `node scripts/update-server-url.mjs`).
 //
 // Security notes (also in docs/ENVIRONMENTS.md): whoever can push to the repository's main branch can point this
@@ -30,6 +31,10 @@ function json(status, body) {
 
 export default async function handler(request) {
   const incoming = new URL(request.url);
+  const p = incoming.searchParams.get("__p") ?? "";
+  incoming.searchParams.delete("__p");
+  const target = "/api/" + p.replace(/^\/+/, "") + (incoming.searchParams.size ? "?" + incoming.searchParams.toString() : "");
+
   const headers = new Headers();
   for (const [k, v] of request.headers) if (!HOP.has(k.toLowerCase())) headers.set(k, v);
   const hasBody = !["GET", "HEAD"].includes(request.method);
@@ -44,8 +49,8 @@ export default async function handler(request) {
       return json(502, { code: "INTERNAL", message: "Gateway cannot find the server address: " + e.message });
     }
     try {
-      const upstream = await fetch(base + incoming.pathname + incoming.search, { method: request.method, headers, body, redirect: "manual" });
-      // an old tunnel address answers with 404 or 530/1033 from Cloudflare: look up the address again once
+      const upstream = await fetch(base + target, { method: request.method, headers, body, redirect: "manual" });
+      // an old tunnel address answers with 530 or 502 from Cloudflare: look up the address again once
       if (!force && (upstream.status === 530 || upstream.status === 502) && upstream.headers.get("server")?.toLowerCase().includes("cloudflare")) continue;
       return new Response(upstream.body, { status: upstream.status, headers: upstream.headers });
     } catch {

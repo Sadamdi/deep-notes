@@ -1,0 +1,6 @@
+{
+  "name": "deepnotes-api-gateway",
+  "private": true,
+  "type": "module",
+  "description": "Stable address for the Deep Notes API: forwards /api/* to the current server (see api/[...path].js)"
+}

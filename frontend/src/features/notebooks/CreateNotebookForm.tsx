@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { Link } from "react-router";
 import { createNotebookSchema, type CreateNotebookInput } from "@deep-notes/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,29 +12,28 @@ type Props = { onSubmit: (input: CreateNotebookInput) => void | Promise<void> };
 
 /** Form validation uses the shared Zod schema so client and API rules stay identical. */
 export function CreateNotebookForm({ onSubmit }: Props) {
-  const [submitNotice, setSubmitNotice] = useState<{ tone: "error" | "info"; text: string } | null>(null);
+  const [needsSignIn, setNeedsSignIn] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<CreateNotebookInput>({ resolver: zodResolver(createNotebookSchema) });
+  } = useForm<CreateNotebookInput>({
+    resolver: zodResolver(createNotebookSchema),
+    defaultValues: { visibility: "private" },
+  });
 
   const handleValidSubmit = async (input: CreateNotebookInput) => {
-    setSubmitNotice(null);
+    setNeedsSignIn(false);
+    setSubmitError(null);
     try {
       await onSubmit(input);
     } catch (err) {
       if (err instanceof ApiRequestError && err.code === "UNAUTHORIZED") {
-        setSubmitNotice({
-          tone: "info",
-          text: "Pembuatan workspace membutuhkan sesi akun aktif. Layar masuk dan daftar akan dihubungkan pada tahap berikutnya.",
-        });
+        setNeedsSignIn(true);
         return;
       }
-      setSubmitNotice({
-        tone: "error",
-        text: err instanceof Error ? err.message : "Gagal membuat workspace. Periksa koneksi API lalu coba lagi.",
-      });
+      setSubmitError(err instanceof Error ? err.message : "Gagal membuat workspace. Periksa koneksi API lalu coba lagi.");
     }
   };
 
@@ -57,33 +57,54 @@ export function CreateNotebookForm({ onSubmit }: Props) {
         )}
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="notebook-course" className="font-bold">
-          Kode atau nama mata kuliah (opsional)
-        </Label>
-        <Input
-          id="notebook-course"
-          placeholder="Contoh: IF3130"
-          aria-invalid={!!errors.course}
-          {...register("course")}
-        />
-        {errors.course && (
-          <p role="alert" className="text-xs font-bold text-destructive">
-            {errors.course.message}
-          </p>
-        )}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="notebook-course" className="font-bold">
+            Mata kuliah (opsional)
+          </Label>
+          <Input
+            id="notebook-course"
+            placeholder="Contoh: IF3130"
+            aria-invalid={!!errors.course}
+            {...register("course")}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="notebook-visibility" className="font-bold">
+            Visibilitas ruang
+          </Label>
+          <select
+            id="notebook-visibility"
+            {...register("visibility")}
+            className="min-h-11 w-full rounded-lg border border-input bg-card px-3 text-sm font-medium text-card-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+          >
+            <option value="private">Privat (anggota saja)</option>
+            <option value="public">Publik (muncul di Jelajah)</option>
+          </select>
+        </div>
       </div>
 
-      {submitNotice && (
+      {needsSignIn && (
+        <div role="status" className="space-y-2 rounded-lg bg-warning p-3 text-xs text-warning-foreground">
+          <p className="font-bold">Masuk terlebih dahulu untuk membuat workspace baru.</p>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild size="xs">
+              <Link to="/masuk?next=/workspace">Masuk</Link>
+            </Button>
+            <Button asChild size="xs" variant="outline">
+              <Link to="/daftar?next=/workspace">Buat Akun</Link>
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {submitError && (
         <p
-          role="status"
-          className={
-            submitNotice.tone === "error"
-              ? "rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2.5 text-xs font-bold text-destructive"
-              : "rounded-lg bg-warning px-3 py-2.5 text-xs font-bold text-warning-foreground"
-          }
+          role="alert"
+          className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2.5 text-xs font-bold text-destructive"
         >
-          {submitNotice.text}
+          {submitError}
         </p>
       )}
 

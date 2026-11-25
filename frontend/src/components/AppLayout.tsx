@@ -8,11 +8,13 @@ import {
   isMobileNavActive,
 } from "@/components/navigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useAuth } from "@/features/auth/useAuth";
 import { ApiStatus } from "@/features/health/ApiStatus";
 import { cn } from "@/lib/utils";
 
 export function AppLayout() {
   const { pathname } = useLocation();
+  const { user, isAuthenticated, logout, isLoggingOut } = useAuth();
   const isNotebookDetail = pathname.startsWith("/notebooks/");
 
   return (
@@ -73,23 +75,23 @@ export function AppLayout() {
           >
             {isNotebookDetail ? (
               <>
-                <a
-                  href="#sumber-ruang"
-                  className="flex min-h-11 items-center rounded-md bg-muted px-3 py-2 text-[13px] font-bold text-foreground transition-colors hover:bg-secondary hover:text-secondary-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
-                >
-                  Sumber Materi
-                </a>
-                <a
-                  href="#peta-sumber"
-                  className="flex min-h-11 items-center rounded-md bg-muted px-3 py-2 text-[13px] font-bold text-foreground transition-colors hover:bg-secondary hover:text-secondary-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
-                >
-                  Peta Sumber
-                </a>
                 <Link
-                  to="/workspace"
+                  to={pathname}
                   className="flex min-h-11 items-center rounded-md bg-muted px-3 py-2 text-[13px] font-bold text-foreground transition-colors hover:bg-secondary hover:text-secondary-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
                 >
-                  Semua Workspace
+                  Mulai Belajar
+                </Link>
+                <Link
+                  to={`${pathname}?tab=kuis`}
+                  className="flex min-h-11 items-center rounded-md bg-muted px-3 py-2 text-[13px] font-bold text-foreground transition-colors hover:bg-secondary hover:text-secondary-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+                >
+                  Sesi dan Kuis
+                </Link>
+                <Link
+                  to={`${pathname}?tab=kelompok`}
+                  className="flex min-h-11 items-center rounded-md bg-muted px-3 py-2 text-[13px] font-bold text-foreground transition-colors hover:bg-secondary hover:text-secondary-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+                >
+                  Papan Kelompok
                 </Link>
               </>
             ) : (
@@ -123,11 +125,42 @@ export function AppLayout() {
           </nav>
         </div>
 
-        <div className="mt-6 flex flex-col gap-3 px-3 pb-3">
+        <div className="mt-6 flex flex-col gap-2.5 px-3 pb-3">
+          {isAuthenticated && user ? (
+            <div className="space-y-2 rounded-lg bg-muted p-2.5 text-xs">
+              <p className="truncate font-bold text-foreground">{user.name}</p>
+              <p className="truncate text-muted-foreground">{user.email}</p>
+              <button
+                type="button"
+                disabled={isLoggingOut}
+                onClick={() => void logout()}
+                className="min-h-9 w-full rounded-md bg-card px-2.5 py-1.5 text-left text-xs font-bold text-foreground hover:bg-secondary hover:text-secondary-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+              >
+                {isLoggingOut ? "Keluar..." : "Keluar"}
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-1.5">
+              <Link
+                to="/masuk"
+                className="flex min-h-11 items-center justify-center rounded-md bg-primary px-2 text-xs font-bold text-primary-foreground hover:bg-primary/90 focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+              >
+                Masuk
+              </Link>
+              <Link
+                to="/daftar"
+                className="flex min-h-11 items-center justify-center rounded-md bg-secondary px-2 text-xs font-bold text-secondary-foreground hover:bg-secondary/80 focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+              >
+                Daftar
+              </Link>
+            </div>
+          )}
+
           <div className="flex flex-col gap-2">
             <ApiStatus />
             <ThemeToggle className="w-full" />
           </div>
+
           <div className="pointer-events-none flex justify-end pt-1 select-none">
             <img
               src={bubiIdle}
@@ -135,7 +168,7 @@ export function AppLayout() {
               aria-hidden="true"
               width={150}
               height={160}
-              className="h-auto w-[132px] lg:w-[150px]"
+              className="h-auto w-[124px] lg:w-[146px]"
             />
           </div>
         </div>
@@ -152,12 +185,22 @@ export function AppLayout() {
             <img src={brandMark} alt="" aria-hidden="true" width={25} height={25} fetchPriority="high" />
             <span>Deep Notes</span>
           </Link>
-          <ApiStatus />
+          <div className="flex items-center gap-2">
+            <ApiStatus />
+            {!isAuthenticated && (
+              <Link
+                to="/masuk"
+                className="inline-flex min-h-11 items-center rounded-lg bg-secondary px-3 text-xs font-bold text-secondary-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+              >
+                Masuk
+              </Link>
+            )}
+          </div>
         </header>
 
         <main
           id="main-content"
-          className="mx-auto w-full max-w-[1160px] flex-1 px-[18px] pt-3 pb-28 md:px-7 md:py-8 lg:px-11 lg:py-10"
+          className="mx-auto w-full max-w-[1180px] flex-1 px-[18px] pt-3 pb-28 md:px-7 md:py-8 lg:px-10 lg:py-9"
         >
           <Outlet />
         </main>

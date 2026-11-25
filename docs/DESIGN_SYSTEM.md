@@ -49,12 +49,12 @@ Visual direction follows the Figma page `Desain Final Deep Notes` (`node-id=174:
 | Component | Status | Behavior |
 |---|---|---|
 | `AppLayout` + `ThemeToggle` | built | responsive sidebar + mobile bottom bar + skip link + `/menu` + light/dark mode |
+| `AuthSplitShell` | built | split Bubi illustration + form container for `/masuk` and `/daftar` |
 | `ApiStatus` | built | polls `GET /api/v1/health` with accessible `role="status"` badge |
-| `SourcesTable` | built | TanStack Table v9 list of sources with text status badges and empty state |
-| Answer card | to build | shows answer text and citation chips; ungrounded answers use `warning` and no chips |
-| Citation chip | to build | `cite` color, source title and page; click opens source preview at that page |
-| Contribution bar | to build | per-member counts of sources and questions, with text values |
-| Quiz card | to build | one question at a time, keyboard friendly, result summary at the end |
+| `WorkspaceBubiPanel` (answer card + citation chips) | built | step-by-step grounded explanation with clickable `cite` chips; `grounded: false` shows `warning` and no chips |
+| `WorkspaceSourcesColumn` + `WorkspaceSourcePreview` | built | file/text/link upload, status polling, reference filter, and cited page reader |
+| `WorkspaceQuizTab` | built | one question at a time, keyboard-accessible radio options, graded breakdown with source page links |
+| `WorkspaceGroupTab` | built | per-member contribution counts and bars, knowledge gap map with page links, study assignments, and invites |
 
 ## Changelog
 

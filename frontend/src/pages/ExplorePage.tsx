@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 import { Link } from "react-router";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +24,7 @@ export function ExplorePage() {
   useDocumentTitle("Jelajah");
   const [draftQuery, setDraftQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
+  const [requestedIds, setRequestedIds] = useState<string[]>([]);
 
   const publicQuery = useQuery({
     queryKey: ["public-notebooks", submittedQuery],
@@ -32,6 +33,17 @@ export function ExplorePage() {
       return api<PublicNotebook[]>(`/public/notebooks${qs}`);
     },
     retry: false,
+  });
+
+  const joinRequestMutation = useMutation({
+    mutationFn: (notebookId: string) =>
+      api(`/public/notebooks/${notebookId}/join-requests`, {
+        method: "POST",
+        body: JSON.stringify({}),
+      }),
+    onSuccess: (_data, notebookId) => {
+      setRequestedIds((prev) => [...prev, notebookId]);
+    },
   });
 
   const handleSearch = (event: FormEvent<HTMLFormElement>) => {
@@ -98,11 +110,13 @@ export function ExplorePage() {
               <Badge variant="outline">Perlu sesi akun</Badge>
             </div>
             <CardDescription>
-              Endpoint pencarian workspace publik (<code>GET /api/v1/public/notebooks</code>) memverifikasi keanggotaan
-              pengguna. Kamu tetap bisa mencoba tata letak ruang pada halaman contoh.
+              Masuk ke akunmu untuk mencari ruang belajar publik dan mengirim permintaan bergabung.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex flex-wrap gap-2.5">
+            <Button asChild>
+              <Link to="/masuk?next=/jelajah">Masuk ke Akun</Link>
+            </Button>
             <Button asChild variant="secondary">
               <Link to="/notebooks/sample">Buka Contoh Workspace</Link>
             </Button>
@@ -134,8 +148,8 @@ export function ExplorePage() {
             <CardTitle className="text-lg font-bold">Tidak ada workspace publik yang cocok</CardTitle>
             <CardDescription>
               {submittedQuery
-                ? `Tidak ditemukan ruang publik untuk kata kunci "${submittedQuery}". Coba kata kunci lain atau buat ruang baru.`
-                : "Belum ada workspace publik yang dibagikan. Buat workspace baru untuk memulai."}
+                ? `Tidak ditemukan ruang publik untuk kata kunci "${submittedQuery}".`
+                : "Belum ada workspace publik yang dibagikan. Buat workspace baru dan pilih visibilitas Publik."}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -148,32 +162,43 @@ export function ExplorePage() {
 
       {publicQuery.isSuccess && publicQuery.data.length > 0 && (
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {publicQuery.data.map((nb) => (
-            <li key={nb.id}>
-              <Card className="h-full justify-between">
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-2">
-                    <CardTitle className="text-base font-bold">{nb.title}</CardTitle>
-                    {nb.category && <Badge variant="secondary">{nb.category}</Badge>}
-                  </div>
-                  <CardDescription>
-                    {nb.course ? `${nb.course} · ` : ""}
-                    {nb.sourceCount} sumber · {nb.memberCount} anggota
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {nb.description && <p className="text-sm text-muted-foreground">{nb.description}</p>}
-                  {nb.isMember ? (
-                    <Button asChild className="w-full">
-                      <Link to={`/notebooks/${nb.id}`}>Buka Ruang</Link>
-                    </Button>
-                  ) : (
-                    <Badge variant="outline">Publik · minta bergabung setelah masuk</Badge>
-                  )}
-                </CardContent>
-              </Card>
-            </li>
-          ))}
+          {publicQuery.data.map((nb) => {
+            const requested = requestedIds.includes(nb.id);
+            return (
+              <li key={nb.id}>
+                <Card className="h-full justify-between">
+                  <CardHeader>
+                    <div className="flex items-start justify-between gap-2">
+                      <CardTitle className="text-base font-bold">{nb.title}</CardTitle>
+                      {nb.category && <Badge variant="secondary">{nb.category}</Badge>}
+                    </div>
+                    <CardDescription>
+                      {nb.course ? `${nb.course} · ` : ""}
+                      {nb.sourceCount} sumber · {nb.memberCount} anggota
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {nb.description && <p className="text-sm text-muted-foreground">{nb.description}</p>}
+                    {nb.isMember ? (
+                      <Button asChild className="w-full">
+                        <Link to={`/notebooks/${nb.id}`}>Buka Ruang</Link>
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="w-full"
+                        disabled={requested || joinRequestMutation.isPending}
+                        onClick={() => joinRequestMutation.mutate(nb.id)}
+                      >
+                        {requested ? "Permintaan Terkirim" : "Minta Bergabung"}
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

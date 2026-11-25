@@ -10,8 +10,8 @@ Open work lives here. One line per item; link a doc if it needs more than a line
 | T-004 | backend | F-04 cited question answering with the not-found fallback | Adam | high | open |
 | T-005 | backend | F-05 quizzes and attempts | Adam | high | open |
 | T-006 | backend | generate the first Drizzle migration; apply it to the development database | Adam | high | open |
-| T-007 | frontend | auth screens and notebook list | team | high | open |
-| T-008 | frontend | notebook workspace: sources, ask, answer card with citation chips | team | high | open |
+| T-007 | frontend | auth screens and notebook list | Ulin | high | done (v0.0.4) |
+| T-008 | frontend | notebook workspace: sources, ask, answer card with citation chips | Ulin | high | done (v0.0.4) |
 | T-009 | shared | schemas for accounts, invites, sources, quizzes, contributions, progress | Adam | high | open |
 | T-010 | infra | server bootstrap and first deploy ([DEPLOYMENT.md](../DEPLOYMENT.md)); health live | Adam | high | open |
 | T-011 | product | collect many more survey responses (target 30 or more) and update the evidence | team | high | open |

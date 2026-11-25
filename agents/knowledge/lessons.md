@@ -22,3 +22,7 @@ Kunci API, password server, dan password database pernah ditempel ke chat saat p
 
 ## [produk] Sitasi dan kuis dari sumber bukan pembeda
 NotebookLM sudah punya jawaban bersitasi, kuis/flashcard dari sumber, dan berbagi notebook. Juri preliminary menilai pembeda kami lemah (3/5). Pembeda yang masuk akal ada di tingkat kelompok: kontribusi per anggota, kemajuan kelompok, notebook publik per mata kuliah, penjelasan teks dengan karakter. Bangun dan buktikan dulu sebelum diklaim di proposal.
+
+## [frontend] Warna subtipe mobile #607882 (4.35:1) dan border input #afc2c2 (1.86:1) pada kan
+Warna subtipe mobile #607882 (4.35:1) dan border input #afc2c2 (1.86:1) pada kanvas Figma sedikit di bawah ambang WCAG 2.2 AA. Pakai token #45616b (6.18:1) untuk teks sekunder dan #647d86 (4.36:1) untuk border input di index.css agar nada warna tetap sesuai desain tetapi lulus kontras 4.5:1 dan 3:1.
+(dicatat 2026-11-25)

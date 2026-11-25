@@ -11,7 +11,7 @@
 
 ## Purpose
 
-Lets the frontend, CI smoke checks and the hosting platform confirm the backend is up. The frontend header shows the result as the "API" badge.
+Lets the frontend, CI smoke checks and the hosting platform confirm the backend is up. The frontend shell shows the result as the `ApiStatus` badge in the desktop/tablet sidebar and the mobile top bar.
 
 ## Business rules
 

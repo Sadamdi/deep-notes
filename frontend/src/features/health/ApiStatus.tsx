@@ -3,7 +3,7 @@ import type { Health } from "@deep-notes/shared";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 
-/** Shows whether the web app can reach the API. Doubles as a live check of the dev proxy. */
+/** Live check of `/api/v1/health` so connection issues surface immediately in the shell. */
 export function ApiStatus() {
   const { data, isPending, isError } = useQuery({
     queryKey: ["health"],
@@ -11,7 +11,23 @@ export function ApiStatus() {
     refetchInterval: 30_000,
   });
 
-  if (isPending) return <Badge variant="secondary">API: checking</Badge>;
-  if (isError) return <Badge variant="destructive">API: offline</Badge>;
-  return <Badge variant="secondary">API: {data.status}</Badge>;
+  if (isPending) {
+    return (
+      <Badge variant="outline" role="status" aria-live="polite">
+        API: memeriksa
+      </Badge>
+    );
+  }
+  if (isError) {
+    return (
+      <Badge variant="destructive" role="status" aria-live="polite">
+        API: luring
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="secondary" role="status" aria-live="polite">
+      API: {data.status === "ok" ? "aktif" : data.status}
+    </Badge>
+  );
 }

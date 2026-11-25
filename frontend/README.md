@@ -4,6 +4,8 @@ Untuk tim frontend dan desain. Aplikasi web React 19 + TypeScript (Vite, Tailwin
 
 ## Mulai dari mana
 
+0. **Server demo sudah berjalan.** Alamat API tetap `https://deepnotes-api.vercel.app` dan cara mencobanya ada di [../docs/ENVIRONMENTS.md](../docs/ENVIRONMENTS.md). Arahkan dev server ke sana dengan `VITE_API_TARGET`.
+
 1. Baca [../docs/API_CONTRACT.md](../docs/API_CONTRACT.md) untuk semua endpoint, atau buka Swagger UI di `http://localhost:4000/api/docs` saat backend jalan.
 2. Baca [../docs/COMPANION_CONTRACT.md](../docs/COMPANION_CONTRACT.md) untuk maskot: daftar gerakan, bentuk "penampilan", reaksi, dan unggahan.
 3. Coba tanpa login dan tanpa menunggu AI: `GET /api/v1/companion/catalog` dan `GET /api/v1/companion/demo`.

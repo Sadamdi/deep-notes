@@ -90,6 +90,7 @@ Dokumentasi dipisah menurut fungsi supaya manusia dan AI tahu ke mana harus meli
 | Kebutuhan | Baca | Kapan |
 |---|---|---|
 | Mulai bekerja (agent atau manusia) | [AGENTS.md](AGENTS.md) | aturan wajib sebelum menyentuh repo |
+| Alamat API tetap (https://deepnotes-api.vercel.app) dan cara mencoba API | [docs/ENVIRONMENTS.md](docs/ENVIRONMENTS.md) | **mulai di sini untuk frontend** |
 | Frontend: apa yang bisa dipanggil | [docs/API_CONTRACT.md](docs/API_CONTRACT.md) dan Swagger di `/api/docs` | membangun layar |
 | Frontend: maskot, gerakan, unggah | [docs/COMPANION_CONTRACT.md](docs/COMPANION_CONTRACT.md) | membangun pemutar maskot |
 | Backend: cara kerja modul | [backend/README.md](backend/README.md) | mengubah atau menambah endpoint |

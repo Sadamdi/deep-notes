@@ -9,10 +9,11 @@
 # and restarts again. Database migrations run on start and are additive; they are not rolled back.
 #
 # Settings (environment variables, defaults in brackets):
-#   DEPLOY_HOST [root@38.58.176.185]  DEPLOY_PORT [22232]  DEPLOY_KEY [~/.ssh/deepnotes_vps_ed25519]
+#   DEPLOY_HOST (required, for example root@<server-ip>)  DEPLOY_PORT [22232]  DEPLOY_KEY [~/.ssh/deepnotes_vps_ed25519]
+#   The server address is not kept in the repository because it is public; ask Adam or read your own notes.
 set -euo pipefail
 
-HOST="${DEPLOY_HOST:-root@38.58.176.185}"
+HOST="${DEPLOY_HOST:?set DEPLOY_HOST, for example root@<server-ip>}"
 PORT="${DEPLOY_PORT:-22232}"
 KEY="${DEPLOY_KEY:-$HOME/.ssh/deepnotes_vps_ed25519}"
 APP=/opt/deepnotes/app/backend

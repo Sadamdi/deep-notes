@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import request from "supertest";
 import type { Db } from "../src/db/index.js";
 import { validateCitations, NOT_FOUND_TEXT, type Retrieved } from "../src/modules/answers/answers.service.js";
 import { chunkPages } from "../src/modules/sources/extract.js";
@@ -85,7 +86,7 @@ describe("F-10 explanation steps with emotion", () => {
     expect(r.body.data.steps.length).toBeGreaterThan(1);
     for (const s of r.body.data.steps) {
       expect(s.text.length).toBeGreaterThan(0);
-      expect(["neutral", "curious", "happy", "thinking", "encouraging", "concerned"]).toContain(s.emotion);
+      expect(["idle", "senang", "sedih", "marah", "antusias", "semangat"]).toContain(s.emotion);
     }
     expect(r.body.data.citations.length).toBeGreaterThan(0);
   });
@@ -95,7 +96,67 @@ describe("F-10 explanation steps with emotion", () => {
     const id = await createNotebookWithSources(u.agent);
     const r = await u.agent.post(`/api/v1/notebooks/${id}/explain`).send({ question: "Jelaskan resep rendang tradisional Minang" });
     expect(r.body.data.grounded).toBe(false);
-    expect(r.body.data.steps).toEqual([{ text: NOT_FOUND_TEXT, emotion: "concerned" }]);
+    expect(r.body.data.steps).toEqual([{ text: NOT_FOUND_TEXT, emotion: "sedih" }]);
+  });
+});
+
+describe("workspace AI assistance", () => {
+  it("returns source-grounded writing help with validated citations", async () => {
+    const user = await signUp(app, "Assist");
+    const notebookId = await createNotebookWithSources(user.agent);
+    const response = await user.agent.post(`/api/v1/notebooks/${notebookId}/ai/assist`).send({
+      task: "summarize",
+      input: "Apa keunggulan topologi bintang ketika satu kabel rusak?",
+    });
+    expect(response.status).toBe(200);
+    expect(response.body.data.grounded).toBe(true);
+    expect(response.body.data.text).toBeTruthy();
+    expect(response.body.data.citations.length).toBeGreaterThan(0);
+    expect(response.body.data.citations[0].sourceTitle).toBe("Jaringan 1");
+  });
+
+  it("suggests questions from the selected source scope", async () => {
+    const user = await signUp(app, "Question suggester");
+    const notebookId = await createNotebookWithSources(user.agent);
+    const response = await user.agent.post(`/api/v1/notebooks/${notebookId}/ai/assist`).send({
+      task: "suggest_questions",
+      input: "Apa keunggulan topologi bintang ketika satu kabel rusak?",
+    });
+    expect(response.body.data.grounded).toBe(true);
+    expect(response.body.data.items.length).toBeGreaterThan(0);
+    expect(response.body.data.citations.length).toBeGreaterThan(0);
+  });
+
+  it("refuses unsupported requests and rejects invalid or unauthorized input", async () => {
+    const user = await signUp(app, "Assist validator");
+    const notebookId = await createNotebookWithSources(user.agent);
+    const noSession = await request(app).post(`/api/v1/notebooks/${notebookId}/ai/assist`).send({ task: "summarize", input: "Ringkas topologi bintang." });
+    expect(noSession.status).toBe(401);
+
+    const unsupported = await user.agent.post(`/api/v1/notebooks/${notebookId}/ai/assist`).send({
+      task: "summarize",
+      input: "Jelaskan resep rendang tradisional Minang.",
+    });
+    expect(unsupported.status).toBe(200);
+    expect(unsupported.body.data.grounded).toBe(false);
+    expect(unsupported.body.data.citations).toEqual([]);
+
+    const invalid = await user.agent.post(`/api/v1/notebooks/${notebookId}/ai/assist`).send({ task: "unknown", input: "?" });
+    expect(invalid.status).toBe(400);
+
+    const outsider = await signUp(app, "Assist outsider");
+    const forbidden = await outsider.agent.post(`/api/v1/notebooks/${notebookId}/ai/assist`).send({ task: "summarize", input: "Ringkas topologi bintang." });
+    expect(forbidden.status).toBe(404);
+
+    const otherNotebookId = await createNotebookWithSources(outsider.agent);
+    const otherSource = (await outsider.agent.get(`/api/v1/notebooks/${otherNotebookId}/sources`)).body.data[0].id;
+    const isolated = await user.agent.post(`/api/v1/notebooks/${notebookId}/ai/assist`).send({
+      task: "summarize",
+      input: "Ringkas topologi bintang.",
+      sourceIds: [otherSource],
+    });
+    expect(isolated.body.data.grounded).toBe(false);
+    expect(isolated.body.data.citations).toEqual([]);
   });
 });
 

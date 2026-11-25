@@ -47,6 +47,7 @@ export const addLinkSourceSchema = z.object({
 });
 
 export const quizKindSchema = z.enum(["practice", "weekly", "exam"]);
+export type QuizKind = z.infer<typeof quizKindSchema>;
 export const generateQuizSchema = z.object({
   title: z.string().trim().min(1).max(120).optional(),
   kind: quizKindSchema.default("practice"),
@@ -78,6 +79,7 @@ export const profileSchema = z.object({
   course: z.string().trim().max(120).nullable().optional(),
   lookingForPartners: z.boolean().optional(),
 });
+export type ProfileInput = z.infer<typeof profileSchema>;
 
 /** One generated quiz item as stored. The answer fields are removed before a quiz is shown to a taker. */
 export const quizItemSchema = z.object({
@@ -92,8 +94,26 @@ export const quizItemSchema = z.object({
 });
 export type QuizItem = z.infer<typeof quizItemSchema>;
 
-/** Explanation in short steps. `emotion` drives the animated companion; the text is always shown too. */
-export const emotionSchema = z.enum(["neutral", "curious", "happy", "thinking", "encouraging", "concerned"]);
+/** Figma-backed Bubi expressions used by new AI responses. */
+export const BUBI_EMOTIONS = ["idle", "senang", "sedih", "marah", "antusias", "semangat"] as const;
+const bubiEmotionSchema = z.enum(BUBI_EMOTIONS);
+
+/** Older saved answers and performances may still contain these labels; normalize them when read. */
+const legacyEmotionSchema = z.enum(["neutral", "curious", "happy", "thinking", "encouraging", "concerned"]);
+const legacyEmotionMap: Record<z.infer<typeof legacyEmotionSchema>, z.infer<typeof bubiEmotionSchema>> = {
+  neutral: "idle",
+  curious: "antusias",
+  happy: "senang",
+  thinking: "idle",
+  encouraging: "semangat",
+  concerned: "sedih",
+};
+
+/** Explanation in short steps. `emotion` selects a real Bubi SVG; the text is always shown too. */
+export const emotionSchema = z.union([bubiEmotionSchema, legacyEmotionSchema]).transform((emotion): z.infer<typeof bubiEmotionSchema> =>
+  emotion in legacyEmotionMap ? legacyEmotionMap[emotion as keyof typeof legacyEmotionMap] : (emotion as z.infer<typeof bubiEmotionSchema>),
+);
+export type Emotion = z.output<typeof emotionSchema>;
 export const explanationStepSchema = z.object({ text: z.string().min(1), emotion: emotionSchema });
 export type ExplanationStep = z.infer<typeof explanationStepSchema>;
 

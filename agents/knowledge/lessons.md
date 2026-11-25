@@ -22,3 +22,11 @@ Kunci API, password server, dan password database pernah ditempel ke chat saat p
 
 ## [produk] Sitasi dan kuis dari sumber bukan pembeda
 NotebookLM sudah punya jawaban bersitasi, kuis/flashcard dari sumber, dan berbagi notebook. Juri preliminary menilai pembeda kami lemah (3/5). Pembeda yang masuk akal ada di tingkat kelompok: kontribusi per anggota, kemajuan kelompok, notebook publik per mata kuliah, penjelasan teks dengan karakter. Bangun dan buktikan dulu sebelum diklaim di proposal.
+
+## [frontend] Layar desain tanpa API harus menjadi handoff yang jelas
+Jika layar desain belum punya API terverifikasi, beri label bahwa data hanya tersimpan di browser dan catat kebutuhan backend. Kelompokkan cakupan route secara jujur; jangan mengklaim semua frame sudah dibandingkan piksel demi piksel.
+(dicatat 2026-11-25)
+
+## [frontend] Figma SVG exports flatten Bubi variants but use expression-specific part ids
+Figma SVG exports flatten Bubi variants but use expression-specific part ids. Map and verify the moving head and arm ids for all six faces so a pose cannot silently animate the wrong group.
+(dicatat 2026-11-25)

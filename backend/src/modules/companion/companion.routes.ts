@@ -1,7 +1,7 @@
 import {
   ANIMATIONS,
+  BUBI_EMOTIONS,
   REACTION_FOR_EVENT,
-  emotionSchema,
   explainLevelSchema,
   explainRequestSchema,
   mascotRoleSchema,
@@ -25,7 +25,7 @@ companionPublicRoutes.get("/catalog", (_req, res) => {
     ok({
       mascots: MASCOTS,
       animations: ANIMATIONS,
-      emotions: emotionSchema.options,
+      emotions: BUBI_EMOTIONS,
       styles: mascotRoleSchema.options,
       levels: explainLevelSchema.options,
       /** clips the interface can trigger by itself for study events, without asking the AI */

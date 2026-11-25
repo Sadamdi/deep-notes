@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import {
   ANIMATIONS,
+  BUBI_EMOTIONS,
   DEFAULT_ANIMATION_FOR_EMOTION,
   emotionSchema,
   type Beat,
@@ -24,7 +25,7 @@ export const MASCOTS: Mascot[] = [
 
 const llmBeat = z.object({
   say: z.string().min(1),
-  emotion: emotionSchema.catch("neutral"),
+  emotion: emotionSchema.catch("idle"),
   animation: z.string().default(""),
   cite: z.number().int().nullable().optional(),
 });
@@ -57,7 +58,7 @@ export function notFoundPerformance(req: Pick<ExplainRequest, "style" | "level">
     style: req.style,
     level: req.level,
     grounded: false,
-    beats: [{ index: 0, say: NOT_FOUND_TEXT, emotion: "concerned", animation: "shrug", citation: null, durationMs: 2500, voiceNoteId: null }],
+    beats: [{ index: 0, say: NOT_FOUND_TEXT, emotion: "sedih", animation: "shrug", citation: null, durationMs: 2500, voiceNoteId: null }],
     citations: [],
     followUps: [],
   };
@@ -75,7 +76,7 @@ export async function explainAsPerformance(notebookId: string, req: ExplainReque
 ${STYLE[req.style]} ${LEVEL[req.level]}
 Susun penjelasan sebagai 3 sampai 6 "beats" pendek. Setiap beat punya:
 - "say": teks yang diucapkan maskot, lengkap dan bisa dibaca sendiri tanpa animasi.
-- "emotion": salah satu dari ${emotionSchema.options.join(", ")}.
+- "emotion": salah satu dari ${BUBI_EMOTIONS.join(", ")}.
 - "animation": salah satu dari ${ANIMATIONS.join(", ")}. Pilih yang cocok dengan isi beat (misalnya point_right saat merujuk potongan sumber, think saat bernalar, nod saat membenarkan).
 - "cite": nomor sumber [n] yang sedang dibahas pada beat itu, atau null.
 Tambahkan "followUps": sampai 3 pertanyaan lanjutan yang masih bisa dijawab dari sumber.
@@ -118,11 +119,11 @@ export function demoPerformance(scenario: "explain" | "notfound"): Performance {
     level: "simple",
     grounded: true,
     beats: [
-      { index: 0, say: "Halo! Hari ini kita bahas topologi bintang.", emotion: "happy", animation: "wave", citation: null, durationMs: 2200, voiceNoteId: null },
-      { index: 1, say: "Di topologi bintang, semua perangkat tersambung ke satu switch di tengah.", emotion: "neutral", animation: "write_on_board", citation: 0, durationMs: 3800, voiceNoteId: null },
-      { index: 2, say: "Kalau satu kabel putus, hanya satu perangkat yang terputus. Yang lain aman.", emotion: "happy", animation: "point_right", citation: 0, durationMs: 3600, voiceNoteId: null },
-      { index: 3, say: "Tapi hati-hati: kalau switch-nya rusak, seluruh jaringan ikut mati.", emotion: "concerned", animation: "hold_magnifier", citation: 0, durationMs: 3400, voiceNoteId: null },
-      { index: 4, say: "Nah, menurutmu kenapa switch pusat disebut titik kegagalan tunggal?", emotion: "curious", animation: "lean_in", citation: null, durationMs: 3200, voiceNoteId: null },
+      { index: 0, say: "Halo! Hari ini kita bahas topologi bintang.", emotion: "senang", animation: "wave", citation: null, durationMs: 2200, voiceNoteId: null },
+      { index: 1, say: "Di topologi bintang, semua perangkat tersambung ke satu switch di tengah.", emotion: "idle", animation: "write_on_board", citation: 0, durationMs: 3800, voiceNoteId: null },
+      { index: 2, say: "Kalau satu kabel putus, hanya satu perangkat yang terputus. Yang lain aman.", emotion: "senang", animation: "point_right", citation: 0, durationMs: 3600, voiceNoteId: null },
+      { index: 3, say: "Tapi hati-hati: kalau switch-nya rusak, seluruh jaringan ikut mati.", emotion: "sedih", animation: "hold_magnifier", citation: 0, durationMs: 3400, voiceNoteId: null },
+      { index: 4, say: "Nah, menurutmu kenapa switch pusat disebut titik kegagalan tunggal?", emotion: "antusias", animation: "lean_in", citation: null, durationMs: 3200, voiceNoteId: null },
     ],
     citations: [
       {

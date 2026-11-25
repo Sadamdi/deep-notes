@@ -1,4 +1,4 @@
-import type { Animation, CreateSessionInput, GameType } from "@deep-notes/shared";
+import type { Animation, CreateSessionInput, Emotion, GameType } from "@deep-notes/shared";
 import { getDb } from "../../db/index.js";
 import { AppError } from "../../lib/errors.js";
 import { TIME_LIMIT_SEC, generateRoundItems, type GameItem } from "./items.js";
@@ -9,17 +9,17 @@ export interface PlannedRound {
   topic: string | null;
   timeLimitSec: number;
   items: GameItem[];
-  cue: { intro: string; introAnimation: Animation; introEmotion: "neutral" | "curious" | "happy" | "thinking" | "encouraging" | "concerned" };
+  cue: { intro: string; introAnimation: Animation; introEmotion: Emotion };
 }
 
 const INTRO: Record<GameType, PlannedRound["cue"]> = {
-  mcq: { intro: "Pemanasan dulu ya! Pilih jawaban yang paling tepat.", introAnimation: "wave", introEmotion: "happy" },
-  fill: { intro: "Ada kata yang hilang. Bisa kamu tebak?", introAnimation: "lean_in", introEmotion: "curious" },
-  tf: { intro: "Benar atau salah? Hati-hati, ada yang sengaja diubah.", introAnimation: "think", introEmotion: "thinking" },
-  order: { intro: "Susun langkah-langkahnya sesuai urutan.", introAnimation: "point_up", introEmotion: "neutral" },
-  match: { intro: "Pasangkan istilah dengan artinya.", introAnimation: "hold_magnifier", introEmotion: "curious" },
-  guess_page: { intro: "Tebak dari mana kutipan ini berasal.", introAnimation: "read_book", introEmotion: "curious" },
-  teach: { intro: "Sekarang giliranmu mengajar aku. Jelaskan dengan kata-katamu!", introAnimation: "raise_hand", introEmotion: "curious" },
+  mcq: { intro: "Pemanasan dulu ya! Pilih jawaban yang paling tepat.", introAnimation: "wave", introEmotion: "senang" },
+  fill: { intro: "Ada kata yang hilang. Bisa kamu tebak?", introAnimation: "lean_in", introEmotion: "antusias" },
+  tf: { intro: "Benar atau salah? Hati-hati, ada yang sengaja diubah.", introAnimation: "think", introEmotion: "idle" },
+  order: { intro: "Susun langkah-langkahnya sesuai urutan.", introAnimation: "point_up", introEmotion: "idle" },
+  match: { intro: "Pasangkan istilah dengan artinya.", introAnimation: "hold_magnifier", introEmotion: "antusias" },
+  guess_page: { intro: "Tebak dari mana kutipan ini berasal.", introAnimation: "read_book", introEmotion: "antusias" },
+  teach: { intro: "Sekarang giliranmu mengajar aku. Jelaskan dengan kata-katamu!", introAnimation: "raise_hand", introEmotion: "antusias" },
 };
 
 /** Types that keep several players in step easily (short, tap-based). Used for duel and group modes. */

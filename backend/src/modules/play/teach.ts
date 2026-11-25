@@ -1,4 +1,4 @@
-import type { Animation, Citation } from "@deep-notes/shared";
+import type { Animation, Citation, Emotion } from "@deep-notes/shared";
 import { z } from "zod";
 import { getAi } from "../../ai/index.js";
 import { MAX_DISTANCE, RULES, retrieve, sourcesBlock, validateCitations } from "../answers/answers.service.js";
@@ -24,21 +24,21 @@ export interface TeachResult {
   /** what the mascot says back, as a "confused student" */
   reply: string;
   animation: Animation;
-  emotion: "happy" | "thinking" | "concerned";
+  emotion: Emotion;
   citations: Citation[];
 }
 
 const REACTION = {
-  yes: { animation: "nod", emotion: "happy" },
-  partly: { animation: "think", emotion: "thinking" },
-  no: { animation: "shake_head", emotion: "concerned" },
+  yes: { animation: "nod", emotion: "senang" },
+  partly: { animation: "think", emotion: "idle" },
+  no: { animation: "shake_head", emotion: "sedih" },
 } as const;
 
 /** The player explains a topic to the mascot; the sources decide what is right. The mascot never invents facts. */
 export async function evaluateTeachBack(notebookId: string, topic: string, explanation: string, sourceIds?: string[]): Promise<TeachResult> {
   const chunks = await retrieve(notebookId, `${topic}\n${explanation}`.slice(0, 1500), 6, sourceIds);
   if (!chunks.length || chunks[0]!.distance > MAX_DISTANCE) {
-    return { checkable: false, understood: "no", score: 0, covered: [], missing: [], wrong: [], reply: "Aku tidak menemukan topik ini di sumber, jadi aku belum bisa memeriksa penjelasanmu. Coba tambah sumbernya.", animation: "shrug", emotion: "concerned", citations: [] };
+    return { checkable: false, understood: "no", score: 0, covered: [], missing: [], wrong: [], reply: "Aku tidak menemukan topik ini di sumber, jadi aku belum bisa memeriksa penjelasanmu. Coba tambah sumbernya.", animation: "shrug", emotion: "sedih", citations: [] };
   }
   const res = await getAi().generateJson({
     purpose: "teach",

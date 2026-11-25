@@ -51,7 +51,7 @@ Response `data`: `{ questionId, question, performance }`.
   "grounded": true,               // false = answer not found in the sources (one shrug beat)
   "beats": [
     { "index": 0, "say": "Halo! Hari ini kita bahas topologi bintang.",
-      "emotion": "happy", "animation": "wave",
+      "emotion": "senang", "animation": "wave",
       "citation": null,           // or an index into `citations`: show that passage in the preview panel
       "durationMs": 2200,         // rough time for typing effect or clip; may be ignored
       "voiceNoteId": null }       // reserved for generated voice (see section 7)
@@ -80,7 +80,7 @@ Player logic (suggested):
 | `lean_in` | curious, asking the user something |
 | `read_book` | reading the source |
 | `hold_magnifier` | looking closely at a detail |
-| `write_on_board` | explaining step by step (default for neutral) |
+| `write_on_board` | explaining step by step (default for idle) |
 | `raise_hand` | "I found something" or "I have a question" |
 | `shrug` | does not know, answer not in the sources |
 | `thumbs_up` | well done, encouragement |
@@ -89,7 +89,9 @@ Player logic (suggested):
 | `sad`, `facepalm` | disappointment, playful "oops" |
 | `sleepy` | long idle |
 
-Emotions (for facial expression): `neutral`, `curious`, `happy`, `thinking`, `encouraging`, `concerned`. Every beat has both an emotion and an animation, so a mascot can combine them (for example `point_right` with `happy`).
+The six canonical Figma-backed Bubi expressions are `idle`, `senang`, `sedih`, `marah`, `antusias`, and `semangat`. Every beat has both an emotion and an animation, so a mascot can combine them (for example `point_right` with `senang`). Older stored labels (`neutral`, `curious`, `happy`, `thinking`, `encouraging`, `concerned`) are normalized to these expressions when read. New AI prompts and API responses use the six canonical names; `marah` is reserved for anger in the cited material and must never blame the learner.
+
+Frontend playback keeps the original transparent Figma SVG for each expression. It first shows the image asset, then renders the same SVG inline with unique local IDs so its masks and references remain independent when several Bubi characters appear together. `wave` moves the right arm; `nod`, `think`, and `lean_in` move the character as one unit to keep its facial details intact; `celebrate` moves the character and both arms. The player starts a short clip when the active beat or reaction changes. Other clips, or clips missing from the selected mascot's catalog, hold a still pose. Missing or malformed expression assets fall back to Idle. `prefers-reduced-motion` keeps the requested face visible and disables movement. The active beat's text and every citation stay available when the user changes steps or reduces motion.
 
 Adding a clip: add the name to `ANIMATIONS` in `shared/src/companion.ts`, to this table, and tell the design team, all in one pull request.
 
@@ -99,15 +101,15 @@ Adding a clip: add the name to `ANIMATIONS` in `shared/src/companion.ts`, to thi
 
 | Event | Animation | Emotion |
 |---|---|---|
-| `greeting` | `wave` | `happy` |
-| `waiting_for_ai` | `think` | `thinking` |
-| `new_source_ready` | `raise_hand` | `curious` |
-| `answer_not_found` | `shrug` | `concerned` |
-| `quiz_correct` | `nod` | `happy` |
-| `quiz_wrong` | `sad` | `encouraging` |
-| `quiz_perfect` | `celebrate` | `happy` |
-| `streak_kept` | `clap` | `happy` |
-| `long_idle` | `sleepy` | `neutral` |
+| `greeting` | `wave` | `senang` |
+| `waiting_for_ai` | `think` | `idle` |
+| `new_source_ready` | `raise_hand` | `antusias` |
+| `answer_not_found` | `shrug` | `sedih` |
+| `quiz_correct` | `nod` | `senang` |
+| `quiz_wrong` | `sad` | `semangat` |
+| `quiz_perfect` | `celebrate` | `semangat` |
+| `streak_kept` | `clap` | `semangat` |
+| `long_idle` | `sleepy` | `idle` |
 
 ## 6. Uploads
 

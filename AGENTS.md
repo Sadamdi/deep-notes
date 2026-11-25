@@ -128,6 +128,23 @@ Dokumen yang menyebut perilaku lama harus ikut diperbarui, bukan hanya file utam
 - three.js dimuat lazy dan tidak boleh jadi satu-satunya cara mengakses informasi; hormati `prefers-reduced-motion`.
 - Aksesibilitas: label pada semua input, fokus terlihat, kontras cukup, jangan mengandalkan warna saja. Komunikasi berbasis teks diutamakan (ada pengguna Tuli di survei kami).
 
+### Acuan dan alur kerja frontend
+
+- Gunakan [Desain Final Deep Notes di Figma](https://www.figma.com/design/Agh2OMnizUCnyi9y4Pyk9o/Deep-Notes---STACK-2026?node-id=174-135) sebagai acuan visual utama. Sebelum membangun layar, periksa frame yang sesuai, varian desktop/mobile, dan state yang tersedia. File FigCraft lokal di `docs/design/deep-notes-ui-ux-lengkap.figcraft` adalah wireframe dan hi-fi awal. Jika keduanya berbeda, ikuti desain final Figma.
+- Sebelum mengubah frontend, baca `frontend/README.md`, fitur yang terkait, `docs/API_CONTRACT.md`, dan skema di `shared/src/`. Baca `docs/COMPANION_CONTRACT.md` untuk layar atau perilaku maskot.
+- Gunakan Figma untuk tampilan dan salinan UI, lalu cocokkan perilaku dengan `docs/API_CONTRACT.md`, skema `shared/src/`, serta implementasi backend. Jika sumber bertentangan atau detail penting belum tersedia, jelaskan buktinya dan tanyakan keputusan yang diperlukan sebelum menebak endpoint, bentuk data, atau perilaku.
+- Pertahankan palet mint dan navy serta karakter Bubi dari desain final. Gunakan token, bukan nilai warna langsung. Jika token yang ada belum cocok, selaraskan `frontend/src/index.css` dan `docs/DESIGN_SYSTEM.md` dalam perubahan yang sama.
+- Gunakan dependensi dan komponen yang sudah tersedia di `frontend/package.json` dan `frontend/src/components/` sebelum menambah paket atau pola baru. Kontrol pada layar harus menjalankan aksi yang terlihat, dan layar harus menyediakan state kosong, memuat, serta galat yang sesuai alur.
+
+### Pemilihan skill Codex
+
+Muat hanya skill yang sesuai dengan pekerjaan saat ini.
+
+- Semua tugas coding memakai `ponytail` pada level full sebagai default. Review perubahan memakai `ponytail-review`; audit seluruh repo memakai `ponytail-audit`. Gunakan `ponytail-help`, `ponytail-debt`, atau `ponytail-gain` saat diminta.
+- Implementasi dari Figma memakai `figma:figma-design-to-code`. Baca atau ubah canvas melalui MCP memakai `figma:figma-use`.
+- Pekerjaan UI memakai `antislop` sebagai filter. Pilih `antislop:antislop-ui`, `antislop:antislop-human`, atau `antislop:antislop-layoutmobile` sesuai fokus visual, aksesibilitas, atau responsivitas. Audit atau pemolesan UX memakai `impeccable`. Gunakan `ui-ux-pro-max` saat layar belum ditentukan oleh desain final.
+- Diagnosis bug memakai `mattpocock-skills:diagnosing-bugs`. Review sejak commit atau branch tertentu berdasarkan standar repo dan spesifikasi memakai `mattpocock-skills:code-review`. Keputusan batas antarmodul memakai `mattpocock-skills:codebase-design`. Alur test-first memakai `mattpocock-skills:tdd` bila diminta.
+
 **Komentar kode** hanya menjelaskan *kenapa* (aturan bisnis, workaround), bukan *apa*. Bahasa Inggris.
 
 ## 9. Git, commit, dan PR

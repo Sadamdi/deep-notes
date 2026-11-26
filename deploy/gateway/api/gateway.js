@@ -8,10 +8,12 @@
 // Security notes (also in docs/ENVIRONMENTS.md): whoever can push to the repository's main branch can point this
 // gateway at another server, and cookies and passwords pass through it. Only accounts the team trusts may push to main.
 // The origin must be https and must not be a vercel.app address (no loops).
-export const config = { runtime: "edge" };
+// Node.js runtime, not edge: an edge function must answer within 25 seconds, and generating a game session or a
+// concept map with the model can take longer.
+export const config = { maxDuration: 100 };
 
 const SOURCE = "https://raw.githubusercontent.com/Sadamdi/deep-notes/main/deploy/server-url.json";
-const HOP = new Set(["host", "connection", "keep-alive", "transfer-encoding", "upgrade", "te", "trailer", "proxy-authorization", "proxy-authenticate", "content-length", "x-forwarded-host", "x-forwarded-proto", "x-forwarded-for", "x-real-ip", "x-vercel-id", "x-vercel-forwarded-for", "forwarded"]);
+const HOP = new Set(["host", "connection", "keep-alive", "transfer-encoding", "upgrade", "te", "trailer", "proxy-authorization", "proxy-authenticate", "content-length", "x-forwarded-host", "x-forwarded-proto", "x-forwarded-for", "x-real-ip", "x-vercel-id", "x-vercel-forwarded-for", "forwarded", "accept-encoding"]);
 let cache = { url: null, at: 0 };
 
 async function origin(force) {
@@ -29,7 +31,7 @@ function json(status, body) {
   return new Response(JSON.stringify({ success: false, error: body }), { status, headers: { "content-type": "application/json" } });
 }
 
-export default async function handler(request) {
+export async function handler(request) {
   const incoming = new URL(request.url);
   const p = incoming.searchParams.get("__p") ?? "";
   incoming.searchParams.delete("__p");
@@ -52,10 +54,16 @@ export default async function handler(request) {
       const upstream = await fetch(base + target, { method: request.method, headers, body, redirect: "manual" });
       // an old tunnel address answers with 530 or 502 from Cloudflare: look up the address again once
       if (!force && (upstream.status === 530 || upstream.status === 502) && upstream.headers.get("server")?.toLowerCase().includes("cloudflare")) continue;
-      return new Response(upstream.body, { status: upstream.status, headers: upstream.headers });
+      // fetch has already decompressed the body, so the old encoding and length no longer describe it
+      const out = new Headers(upstream.headers);
+      out.delete("content-encoding");
+      out.delete("content-length");
+      return new Response(upstream.body, { status: upstream.status, headers: out });
     } catch {
       if (force) return json(502, { code: "INTERNAL", message: "The server is not reachable right now" });
     }
   }
   return json(502, { code: "INTERNAL", message: "The server is not reachable right now" });
 }
+
+export default { fetch: handler };

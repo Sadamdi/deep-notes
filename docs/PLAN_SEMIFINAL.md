@@ -1,8 +1,8 @@
-# Plan: semifinal (30 Nov) and Final Day (16 Dec)
+# Plan: semifinal (30 Nov) and Final Day (19 Dec)
 
 Written 23 Nov 2026. Owner of the backend and infrastructure: Adam. Frontend and design: the other members. This is the shared plan: frontend and backend both build against it, and any AI agent working in this repo should read it after `AGENTS.md`.
 
-Dates come from the handbook and may change: semifinal submission **30 Nov**, Top 10 announcement 7 Dec, Final Day **16 Dec** (working prototype, 10 minute demo, 10 minute Q&A). The team plans to pay the semifinal fee around 25 Nov, after the preliminary judge review.
+Dates come from the handbook and may change: semifinal submission **30 Nov**, Top 10 announcement 7 Dec, Final Day **19 Dec** (working prototype, 10 minute demo, 10 minute Q&A). The team plans to pay the semifinal fee around 25 Nov, after the preliminary judge review.
 
 ## 1. Goals and how they are judged
 

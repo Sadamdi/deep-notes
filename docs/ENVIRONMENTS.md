@@ -19,7 +19,7 @@ Alamat ini **tetap** dan gratis (gerbang di Vercel yang meneruskan `/api/*` ke s
 Diuji lewat gerbang ini: pendaftaran dan cookie sesi, seluruh alur (19 dari 19 pemeriksaan `agents/e2e-live.mjs`), serta unggah file 1 MB dan 4 MB.
 
 ### Batas yang perlu diketahui
-- **Unggah file maksimal sekitar 4,5 MB per permintaan lewat gerbang** (batas Vercel). File 6 MB atau 12 MB ditolak dengan `413 Request Entity Too Large`. Server sendiri menerima sampai 15 MB. Untuk menguji file besar, arahkan Vite proxy ke alamat langsung di bawah (bukan gerbang). Bagian UI unggah sebaiknya menampilkan batas 4 MB selama server memakai gerbang ini.
+- **Unggah file maksimal sekitar 4,5 MB per permintaan lewat gerbang** (batas Vercel). File 6 MB atau 12 MB ditolak dengan `413 Request Entity Too Large`. Server sendiri menerima sampai 15 MB. Untuk menguji file besar, arahkan Vite proxy ke alamat langsung di bawah (bukan gerbang). UI unggah menampilkan dan memeriksa batas 4 MB selama server memakai gerbang ini.
 - Gerbang menambah sekitar 0,2 sampai 1 detik per permintaan; cukup untuk demo.
 - Gerbang membaca alamat server dari berkas publik `deploy/server-url.json` di cabang `main`. Artinya **siapa pun yang bisa push ke `main` dapat mengarahkan gerbang ke server lain**, dan cookie serta kata sandi lewat gerbang. Hanya beri akses push ke anggota tim yang dipercaya.
 

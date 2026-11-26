@@ -13,6 +13,9 @@ import { ApiRequestError, api, jsonBody } from "@/lib/api";
 
 const acceptedFiles = ".pdf,.txt,.md,.docx,.pptx,.xlsx,.csv,.png,.jpg,.jpeg,.webp";
 
+// the hosted API gateway rejects request bodies above about 4.5 MB, below the 15 MB the server itself accepts
+const MAX_FILE_MB = 4;
+
 export function SourceUploader({ notebookId, canUpload }: { notebookId: string; canUpload: boolean }) {
   const fileInput = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
@@ -37,7 +40,7 @@ export function SourceUploader({ notebookId, canUpload }: { notebookId: string; 
     let uploaded = 0;
     try {
       for (const file of Array.from(files)) {
-        if (file.size > 15 * 1024 * 1024) throw new ApiRequestError("VALIDATION", `${file.name} melebihi batas 15 MB per file.`);
+        if (file.size > MAX_FILE_MB * 1024 * 1024) throw new ApiRequestError("VALIDATION", `${file.name} melebihi batas ${MAX_FILE_MB} MB per file.`);
         const form = new FormData();
         form.set("file", file);
         await api<SourceAccepted>(`/notebooks/${notebookId}/sources/file`, { method: "POST", body: form });
@@ -106,7 +109,7 @@ export function SourceUploader({ notebookId, canUpload }: { notebookId: string; 
           <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white text-primary"><Upload aria-hidden="true" className="size-5" /></span>
           <div className="min-w-0 flex-1">
             <h2 className="font-bold text-navy" id="source-upload-title">Kumpulkan bahan kuliah</h2>
-            <p className="mt-1 text-xs leading-5 text-muted-foreground">PDF, slide, spreadsheet, gambar, catatan, dan tautan halaman · maksimal 15 MB per file.</p>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">PDF, slide, spreadsheet, gambar, catatan, dan tautan halaman · maksimal {MAX_FILE_MB} MB per file.</p>
           </div>
         </div>
         <div className="mt-4 flex flex-wrap gap-2">

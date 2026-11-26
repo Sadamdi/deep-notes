@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useState } from "react";
-import { emotionSchema, type Animation, type Emotion } from "@deep-notes/shared";
+import { ANIMATIONS, emotionSchema, type Animation, type Emotion } from "@deep-notes/shared";
 import { cn } from "@/lib/utils";
 
 const emotionNames: Record<Emotion, string> = {
@@ -20,7 +20,7 @@ const artworks: Record<Emotion, string> = {
   semangat: "/assets/bubi-semangat.svg",
 };
 
-const supportedMotions = new Set<Animation>(["wave", "nod", "think", "lean_in", "celebrate"]);
+const supportedMotions = new Set<Animation>(ANIMATIONS.filter((name) => name !== "idle"));
 
 type BubiPart = "head" | "arm-left" | "arm-right";
 

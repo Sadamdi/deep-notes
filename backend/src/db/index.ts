@@ -35,6 +35,8 @@ function pgDb(connectionString: string): Db {
 }
 
 export async function pgliteDb(dataDir?: string): Promise<Db> {
+  // PGlite creates only the last folder, so a fresh checkout without ./.data would fail to start
+  if (dataDir && !dataDir.includes("://")) fs.mkdirSync(dataDir, { recursive: true });
   const lite = new PGlite({ dataDir, extensions: { vector } });
   await lite.waitReady;
   return {

@@ -1,10 +1,10 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import type { Db } from "../src/db/index.js";
 import { validateCitations, NOT_FOUND_TEXT, type Retrieved } from "../src/modules/answers/answers.service.js";
 import { chunkPages } from "../src/modules/sources/extract.js";
 import { assertPublicUrl, htmlToText, isPrivateAddress } from "../src/modules/sources/extract.js";
-import { closeApp, createNotebookWithSources, freshApp, signUp } from "./helpers.js";
+import { fakeAi, closeApp, createNotebookWithSources, freshApp, signUp } from "./helpers.js";
 
 let app: Awaited<ReturnType<typeof freshApp>>["app"];
 let db: Db;
@@ -125,6 +125,20 @@ describe("workspace AI assistance", () => {
     expect(response.body.data.grounded).toBe(true);
     expect(response.body.data.items.length).toBeGreaterThan(0);
     expect(response.body.data.citations.length).toBeGreaterThan(0);
+  });
+
+  it("cites suggested questions from the passage each one names", async () => {
+    const user = await signUp(app, "Citation asker");
+    const notebookId = await createNotebookWithSources(user.agent);
+    // the real model leaves "citations" empty for questions and numbers each question instead
+    const spy = vi.spyOn(fakeAi, "generateJson").mockImplementationOnce(async (opts) =>
+      opts.schema.parse({ grounded: true, text: "Pertanyaan:", items: [{ question: "Apa itu topologi bintang?", n: 1 }, { question: "Tanpa dasar?", n: 99 }], citations: [] }),
+    );
+    const response = await user.agent.post(`/api/v1/notebooks/${notebookId}/ai/assist`).send({ task: "suggest_questions", input: "Apa keunggulan topologi bintang ketika satu kabel rusak?" });
+    expect(response.body.data.grounded).toBe(true);
+    expect(response.body.data.items).toEqual(["Apa itu topologi bintang?"]);
+    expect(response.body.data.citations).toHaveLength(1);
+    spy.mockRestore();
   });
 
   it("refuses unsupported requests and rejects invalid or unauthorized input", async () => {

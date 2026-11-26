@@ -6,7 +6,7 @@ Reference: [Deep Notes — STACK 2026](https://www.figma.com/design/Agh2OMnizUCn
 
 | Designed family | Frontend route(s) | Coverage |
 |---|---|---|
-| Landing, login, registration, recovery | `/`, `/login`, `/register`, `/recover` | Landing/auth flows are implemented. Recovery is an explanatory state because no email reset contract exists. |
+| Landing, login, registration, recovery | `/`, `/login`, `/register`, `/recover` | Landing is implemented. Sign In (`223:10101`) and Sign Up (`223:10144`) use the `Design Lagi` frames. Recovery is an explanatory state because no email reset contract exists. |
 | Feed, saved, following, discovery, social profile | `/home`, `/following`, `/saved`, `/discover`, `/profile`, `/users/:userId` | Existing feed/profile routes are API-backed. Saved IDs remain device-local and publication pages are separate. |
 | Workspace list, create/join, study workspace, sources, upload, citation preview | `/workspaces`, `/workspaces/new`, `/join/:token`, `/workspaces/:notebookId` | Uses notebook/source/ask APIs and source-page dialog; includes loading, empty, processing, failed, and request-error states exposed by the contract. |
 | Group activity, assignments, progress, gaps, quiz scoreboard | `/workspaces/:notebookId/team` and quiz routes | Uses group, assignment, quiz, and attempt contracts. |
@@ -21,6 +21,8 @@ Reference: [Deep Notes — STACK 2026](https://www.figma.com/design/Agh2OMnizUCn
 
 | Frame | Figma node | Implemented destination |
 |---|---|---|
+| Sign In | `223:10101` | `/login` |
+| Sign Up | `223:10144` | `/register` |
 | Main workspace | `175:579` | `/workspaces/:notebookId` |
 | Notes | `175:2579` | `/workspaces/:notebookId/notes` |
 | Discussion | `175:3357` | `/workspaces/:notebookId/discussion` |
@@ -32,9 +34,9 @@ The root page context is node `174:135`. Desktop and mobile Figma variants share
 
 ## Responsive and interaction verification
 
-- Visually opened the landing and login pages at a phone-width viewport. The hero, calls to action, and study preview stack vertically; login fields remain full-width and readable without horizontal scrolling.
-- TypeScript, ESLint, and production build passed after implementation.
-- A desktop viewport and authenticated route screenshots were not available for visual inspection in this session. The local API at `127.0.0.1:4000` was unavailable, so API-backed routes could not be driven with a real signed-in session.
+- Visually opened the current Sign In and Sign Up pages at a 1264×711 desktop viewport. The narrow-screen CSS reflows forms to one column and hides the illustration; a mobile viewport was not available for visual confirmation in this change.
+- Frontend TypeScript check and production build passed for these auth changes. ESLint was not run in this change.
+- Auth form submission was not attempted, so the login/register API response path was not rechecked in this visual change. Authenticated route screenshots were not part of this task.
 - Automated tests were not run or added. Do not treat this note as a report that all 188 frames have been screenshot-compared.
 
 Backend/API gaps are enumerated in [API_HANDOFF.md](API_HANDOFF.md).

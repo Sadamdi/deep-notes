@@ -30,3 +30,7 @@ Jika layar desain belum punya API terverifikasi, beri label bahwa data hanya ter
 ## [frontend] Figma SVG exports flatten Bubi variants but use expression-specific part ids
 Figma SVG exports flatten Bubi variants but use expression-specific part ids. Map and verify the moving head and arm ids for all six faces so a pose cannot silently animate the wrong group.
 (dicatat 2026-11-25)
+
+## [tooling] Resolve workspace verification executables from the package that owns them; Vite
+Resolve workspace verification executables from the package that owns them; Vite is linked under frontend/node_modules/.bin while the shared TypeScript binary is linked at the repository root.
+(dicatat 2026-11-26)

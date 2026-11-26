@@ -26,6 +26,8 @@ CLI (`pnpm dlx shadcn@latest add <component>` from `frontend/`); do not hand-edi
 | `cite` | citation chips and grounded-answer indicators |
 | `warning` | "not found in the sources" and partial states |
 | `navy`, `mint`, `teal`, `coral` | Deep Notes brand surfaces, accents, and game feedback |
+| `auth-surface`, `auth-subtle-foreground`, `auth-field-surface`, `auth-outline-border` | Authentication screen background, supporting text, fields, and secondary action outline |
+| `auth-panel-gradient`, `auth-panel-radius`, `auth-control-radius` | Figma authentication artwork panel and controls |
 | `radius` (0.625rem base) | corner radius; `rounded-sm/md/lg/xl` derive from it |
 | font | Inter, falling back to system sans |
 
@@ -44,6 +46,7 @@ CLI (`pnpm dlx shadcn@latest add <component>` from `frontend/`); do not hand-edi
 | AI assistance panel | task-specific actions, validated source citations with excerpts, and an explicit apply action; generated text is never inserted automatically |
 | Source map/class visualizer | optional SVG/canvas views with text equivalents and API-backed source references |
 | Bubi mascot | six original Figma SVG expressions (`idle`, `senang`, `sedih`, `marah`, `antusias`, `semangat`); short character/arm reactions, Idle asset fallback, and reduced-motion support |
+| Authentication frame and field | shared sign-in/sign-up layout using exported Figma artwork, labeled icon fields, password visibility, and responsive form actions |
 
 Mascot motion is a brief state change, not a continuous loop. Supported reactions animate Bubi as a unit or move its arms; `prefers-reduced-motion` disables movement while the chosen face remains visible. Explanation text, citations, and game/quiz results never depend on the animation.
 

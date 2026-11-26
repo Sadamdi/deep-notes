@@ -5,6 +5,7 @@ Every task gets an entry: a `Plan` before code, `Released` after it is merged an
 
 | Version | Date | Type | Title | Status | File |
 |---|---|---|---|---|---|
+| v0.0.7 | 2026-11-26 | Feature | Authentication screens aligned with Design Lagi | In Progress | [v20261126-auth-design-lagi.md](v20261126-auth-design-lagi.md) |
 | v0.0.6 | 2026-11-25 | Feature | Workspace AI actions across learning tools | Plan | [v20261125-workspace-ai-actions.md](v20261125-workspace-ai-actions.md) |
 | v0.0.5 | 2026-11-25 | Feature | Contract-driven Bubi expressions | In Progress | [v20261125-bubi-expressions.md](v20261125-bubi-expressions.md) |
 | v0.0.4 | 2026-11-25 | Feature | Frontend Deep Notes: Figma implementation | In Progress | [v20261125-frontend-deep-notes.md](v20261125-frontend-deep-notes.md) |

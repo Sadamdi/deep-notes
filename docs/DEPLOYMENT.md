@@ -126,3 +126,8 @@ The API is reachable at **https://deepnotes-api.vercel.app** through a small gat
 - Redeploy the gateway only when `deploy/gateway/` changes (Vercel dashboard or the Vercel MCP `create_deployment` with those files). It has no secrets and no environment variables.
 - Limits: request bodies up to about 4.5 MB (Vercel), so uploads above that fail with `413` through the gateway; the server itself accepts 15 MB. Anyone who can push to `main` can repoint the gateway, so keep push access small.
 - A permanent fix needs a domain on Cloudflare and a named tunnel (free tunnel, domain costs); then the gateway becomes unnecessary.
+
+### 9.3 Frontend on Vercel (26 Nov 2026)
+The frontend is live at **https://deepnotes-app.vercel.app** (Vercel project `deepnotes-app`). Deploy with `bash scripts/deploy-frontend.sh`: it builds here and uploads only `frontend/dist`. `frontend/vercel.json` forwards `/api/*` to the gateway (section 9.2), so the browser sees one origin, and serves `index.html` for app routes. There is no Git auto-deploy; run the script after a merge.
+- `deep-notes.vercel.app`, mentioned in earlier docs and in the server `CORS_ORIGIN`, is not served by this project.
+- The gateway does not forward the visitor's IP, so per-IP limits (register, login) are likely shared by all visitors (not verified).

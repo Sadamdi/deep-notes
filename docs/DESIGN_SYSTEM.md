@@ -25,19 +25,32 @@ CLI (`pnpm dlx shadcn@latest add <component>` from `frontend/`); do not hand-edi
 | `destructive` | errors and dangerous actions |
 | `cite` | citation chips and grounded-answer indicators |
 | `warning` | "not found in the sources" and partial states |
+| `navy`, `mint`, `teal`, `coral` | Deep Notes brand surfaces, accents, and game feedback |
+| `auth-surface`, `auth-subtle-foreground`, `auth-field-surface`, `auth-outline-border` | Authentication screen background, supporting text, fields, and secondary action outline |
+| `auth-panel-gradient`, `auth-panel-radius`, `auth-control-radius` | Figma authentication artwork panel and controls |
 | `radius` (0.625rem base) | corner radius; `rounded-sm/md/lg/xl` derive from it |
 | font | Inter, falling back to system sans |
 
-## Domain components (to build)
+## Domain components
 
 | Component | Behavior |
 |---|---|
-| Answer card | shows the answer text and a list of citation chips; an ungrounded answer shows the `warning` "not found in the sources" state and no chips |
-| Citation chip | `cite` color, source title and page; click opens the source at that page with the quoted passage highlighted |
+| Answer card | shows answer text and grounding state; ungrounded answers have no citation controls |
+| Citation control and source page dialog | shows source title/page and opens page text through the authorized source-page endpoint |
 | Source row | title, type, who added it, status (processing, ready, failed) |
-| Contribution bar | per-member counts of sources and questions, with text values |
-| Quiz card | one question at a time, keyboard friendly, result summary at the end |
+| Contribution and group views | member activity, progress, gaps, assignments, and text values from existing group endpoints |
+| Quiz and game screens | one question/round at a time, keyboard-operable controls, feedback, and result summary |
+| Shared app/public layouts | responsive desktop navigation, phone menu/bottom bar, consistent page states and protected route shell |
+| Workspace notes/discussion and Studio editor | reusable local-first forms; device-only behavior is stated in the UI |
+| Source scope picker | per-notebook choice of all ready sources or an explicit subset; shared across ask, companion, quiz, game, and writing assistance |
+| AI assistance panel | task-specific actions, validated source citations with excerpts, and an explicit apply action; generated text is never inserted automatically |
+| Source map/class visualizer | optional SVG/canvas views with text equivalents and API-backed source references |
+| Bubi mascot | six original Figma SVG expressions (`idle`, `senang`, `sedih`, `marah`, `antusias`, `semangat`); short character/arm reactions, Idle asset fallback, and reduced-motion support |
+| Authentication frame and field | shared sign-in/sign-up layout using exported Figma artwork, labeled icon fields, password visibility, and responsive form actions |
+
+Mascot motion is a brief state change, not a continuous loop. Supported reactions animate Bubi as a unit or move its arms; `prefers-reduced-motion` disables movement while the chosen face remains visible. Explanation text, citations, and game/quiz results never depend on the animation.
 
 ## Changelog
 
 - Initial tokens and shadcn base components (button, card, input, label, badge, table).
+- Final Figma foundation: light mint canvas (`#f4f8f7`), navy actions/text (`#163b4a`), mint surfaces (`#bcebdc`), teal accent, coral game feedback, and Manrope-first typography. Token values are centralized in `frontend/src/index.css`.

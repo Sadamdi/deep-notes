@@ -49,8 +49,8 @@ export const fakeAi: AiProvider = {
         })),
       });
     }
-    const q = /PERTANYAAN: ([\s\S]*)$/.exec(user)?.[1] ?? "";
-    const blocks = [...user.matchAll(/\[(\d+)\] \(([^)]*)\)\n([\s\S]*?)(?=\n\n\[\d+\] \(|\n\nPERTANYAAN:)/g)];
+    const q = /(?:PERTANYAAN|KONTEKS PENGGUNA):\s*([\s\S]*)$/.exec(user)?.[1] ?? "";
+    const blocks = [...user.matchAll(/\[(\d+)\] \(([^)]*)\)\n([\s\S]*?)(?=\n\n\[\d+\] \(|\n\n(?:PERTANYAAN|KONTEKS PENGGUNA):)/g)];
     const qt = new Set(tokens(q));
     let best = { n: 0, overlap: 0, text: "" };
     for (const b of blocks) {
@@ -63,6 +63,14 @@ export const fakeAi: AiProvider = {
         : opts.schema.parse({ grounded: false, answer: "", citations: [] });
     }
     const quote = best.text.slice(0, 50);
+    if (opts.system.includes('"items"')) {
+      return opts.schema.parse({
+        grounded: true,
+        text: "Ringkasan dari sumber: " + best.text.slice(0, 100),
+        items: ["Apa manfaat topologi bintang?"],
+        citations: [{ n: best.n, quote }],
+      });
+    }
     if (opts.system.includes('"beats"')) {
       return opts.schema.parse({
         grounded: true,

@@ -1,4 +1,4 @@
-import { askQuestionSchema } from "@deep-notes/shared";
+import { askQuestionSchema, workspaceAiAssistSchema } from "@deep-notes/shared";
 import { Router } from "express";
 import { getDb } from "../../db/index.js";
 import { ok } from "../../lib/apiResponse.js";
@@ -7,12 +7,23 @@ import { asyncHandler } from "../../middleware/asyncHandler.js";
 import { notebookAccess, requireAuth } from "../../middleware/auth.js";
 import { rateLimit } from "../../middleware/rateLimit.js";
 import { validate } from "../../middleware/validate.js";
-import { answerQuestion, explainQuestion } from "./answers.service.js";
+import { answerQuestion, assistFromWorkspaceSources, explainQuestion } from "./answers.service.js";
 
 export const answerRoutes = Router({ mergeParams: true });
 answerRoutes.use(requireAuth);
 
 const aiLimit = rateLimit({ windowMs: 10 * 60_000, max: 40, key: (req) => `ai:${req.user?.id}` });
+
+answerRoutes.post(
+  "/ai/assist",
+  notebookAccess("viewer"),
+  aiLimit,
+  validate("body", workspaceAiAssistSchema),
+  asyncHandler(async (req, res) => {
+    const result = await assistFromWorkspaceSources(req.member!.notebookId, req.body);
+    res.json(ok(result));
+  }),
+);
 
 answerRoutes.post(
   "/ask",

@@ -26,3 +26,6 @@ One document per feature area in `docs/features/<NN-area>/<name>.md`, copied fro
 | F-19 | 04-answers | Teach-back: explain to the mascot | P1 | [play.md](10-play/play.md) | implemented (backend) |
 | F-20 | 03-sources | Mind map of a source | P2 | [play.md](10-play/play.md) | implemented (backend) |
 | F-21 | 11-feed | Social feed: posts, likes, comments, follows | P1 | [feed.md](11-feed/feed.md) | implemented (backend) |
+| UI-01 | 12-frontend | Final Figma frontend experience and API boundaries | P0 | [experience.md](12-frontend/experience.md) | implemented (frontend); live API verification pending |
+| UI-02 | 12-frontend | Contract-driven Bubi expressions and motion | P1 | [bubi-expressions.md](12-frontend/bubi-expressions.md) | implemented (frontend); live API flow not verified |
+| UI-03 | 12-frontend | Source-grounded AI actions across learning tools | P1 | [ai-actions.md](12-frontend/ai-actions.md) | in progress |

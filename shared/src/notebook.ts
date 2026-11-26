@@ -36,6 +36,16 @@ export const askQuestionSchema = z.object({
 });
 export type AskQuestionInput = z.infer<typeof askQuestionSchema>;
 
+export const workspaceAiTaskSchema = z.enum(["suggest_questions", "summarize", "draft", "practice_guide"]);
+export type WorkspaceAiTask = z.infer<typeof workspaceAiTaskSchema>;
+export const workspaceAiAssistSchema = z.object({
+  task: workspaceAiTaskSchema,
+  /** User text is task context only; factual claims still have to come from notebook sources. */
+  input: z.string().trim().min(3).max(4000),
+  sourceIds: z.array(z.string().uuid()).min(1).max(40).optional(),
+});
+export type WorkspaceAiAssistInput = z.infer<typeof workspaceAiAssistSchema>;
+
 /** An answer is either grounded (has citations) or an explicit "not found in the sources". */
 export const answerSchema = z.discriminatedUnion("grounded", [
   z.object({ grounded: z.literal(true), text: z.string(), citations: z.array(citationSchema).min(1) }),

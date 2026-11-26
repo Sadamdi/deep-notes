@@ -43,7 +43,7 @@ Hasil per item: `{ index, type, correct, fraction, correctAnswer, explanation, t
 - Poin dan streak dihitung sekali per sesi; memanggil `finish` lagi tidak menggandakannya.
 
 ## 5. Reaksi maskot
-Setiap ronde membawa `cue` (kalimat pembuka, `introAnimation`, `introEmotion`). Setiap jawaban dan hasil akhir membawa `reaction: { animation, emotion }` dari daftar 22 klip di [COMPANION_CONTRACT.md](COMPANION_CONTRACT.md): sempurna `celebrate`, minimal separuh benar `nod`, selebihnya `sad` dengan emosi `encouraging`. Tampilkan teks juga, bukan hanya animasi.
+Setiap ronde membawa `cue` (kalimat pembuka, `introAnimation`, `introEmotion`). Setiap jawaban dan hasil akhir membawa `reaction: { animation, emotion }` dari daftar 22 klip di [COMPANION_CONTRACT.md](COMPANION_CONTRACT.md): sempurna `celebrate` dengan ekspresi `semangat`, minimal separuh benar `nod` dengan ekspresi `senang`, dan jawaban lain memakai `sad` dengan ekspresi `semangat`. Tampilkan teks juga, bukan hanya animasi.
 
 ## 6. Duel dan kelompok (polling)
 1. Pembuat: `POST /sessions` dengan `mode: "duel"` atau `"group"` → `status: "waiting"`, `rounds: []`.

@@ -40,12 +40,12 @@ export type Animation = z.infer<typeof animationSchema>;
 
 /** Default clip per emotion, used when the AI picks no valid animation. */
 export const DEFAULT_ANIMATION_FOR_EMOTION: Record<z.infer<typeof emotionSchema>, Animation> = {
-  neutral: "write_on_board",
-  curious: "lean_in",
-  happy: "nod",
-  thinking: "think",
-  encouraging: "thumbs_up",
-  concerned: "shrug",
+  idle: "write_on_board",
+  senang: "nod",
+  sedih: "sad",
+  marah: "shake_head",
+  antusias: "lean_in",
+  semangat: "thumbs_up",
 };
 
 export const mascotRoleSchema = z.enum(["teacher", "friend", "coach"]);
@@ -102,14 +102,14 @@ export type Performance = z.infer<typeof performanceSchema>;
 
 /** What a reaction clip means in the study flow, so the frontend can trigger them without asking the AI. */
 export const REACTION_FOR_EVENT = {
-  quiz_correct: { animation: "nod", emotion: "happy" },
-  quiz_wrong: { animation: "sad", emotion: "encouraging" },
-  quiz_perfect: { animation: "celebrate", emotion: "happy" },
-  streak_kept: { animation: "clap", emotion: "happy" },
-  new_source_ready: { animation: "raise_hand", emotion: "curious" },
-  answer_not_found: { animation: "shrug", emotion: "concerned" },
-  waiting_for_ai: { animation: "think", emotion: "thinking" },
-  long_idle: { animation: "sleepy", emotion: "neutral" },
-  greeting: { animation: "wave", emotion: "happy" },
+  quiz_correct: { animation: "nod", emotion: "senang" },
+  quiz_wrong: { animation: "sad", emotion: "semangat" },
+  quiz_perfect: { animation: "celebrate", emotion: "semangat" },
+  streak_kept: { animation: "clap", emotion: "semangat" },
+  new_source_ready: { animation: "raise_hand", emotion: "antusias" },
+  answer_not_found: { animation: "shrug", emotion: "sedih" },
+  waiting_for_ai: { animation: "think", emotion: "idle" },
+  long_idle: { animation: "sleepy", emotion: "idle" },
+  greeting: { animation: "wave", emotion: "senang" },
 } as const satisfies Record<string, { animation: Animation; emotion: z.infer<typeof emotionSchema> }>;
 export type ReactionEvent = keyof typeof REACTION_FOR_EVENT;

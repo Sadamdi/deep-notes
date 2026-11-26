@@ -27,3 +27,14 @@ Open work lives here. One line per item; link a doc if it needs more than a line
 | T-021 | backend | F-11 public notebooks, categories, search | Adam | medium | open |
 | T-022 | frontend | companion character assets and animations (design members) | team | medium | open |
 | T-023 | infra | backups: `pg_dump` schedule and off-machine copy; confirm the hosting provider's backup tier | Adam | medium | open |
+| T-024 | backend | notification list/read state and event contract | Adam | medium | open |
+| T-025 | backend | account-scoped workspace notes with source/page references | Adam | medium | open |
+| T-026 | backend | workspace discussion messages, source attachments, and refresh/broadcast contract | Adam | medium | open |
+| T-027 | backend | account-scoped saved-post operations and saved-post listing | Adam | medium | open |
+| T-028 | backend | publication/article/author-publication APIs, visibility, media, and comments | Adam | medium | open |
+| T-029 | backend | password-recovery request and time-limited reset-token flow | Adam | medium | open |
+| T-030 | backend | define classroom presence/session events if live attendance is required | Adam | low | open |
+| T-031 | backend | structured slide and spreadsheet visualization contracts (presentation timeline and charts) | Adam | medium | open |
+| T-032 | backend | audio upload, transcription, and voice-note contracts; define whether browser speech APIs remain the intended voice path | Adam | medium | open |
+| T-033 | frontend | run authenticated/API-backed and desktop responsive browser QA when the local backend and safe demo session are available | team | high | open |
+| T-034 | infra | deploy the workspace AI assist route and verify it with a real model on a safe demo notebook | Adam | high | open |

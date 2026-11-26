@@ -322,7 +322,7 @@ playRoutes.post(
     const beats: Performance["beats"] = [{ index: 0, say: t.reply, emotion: t.emotion, animation: t.animation, citation: t.citations.length ? 0 : null, durationMs: Math.min(12_000, Math.max(1_500, t.reply.length * 45)), voiceNoteId: null }];
     if (t.checkable && t.missing.length) {
       const say = `Yang masih kurang: ${t.missing.slice(0, 3).join("; ")}.`;
-      beats.push({ index: 1, say, emotion: "encouraging", animation: "point_right", citation: t.citations.length ? 0 : null, durationMs: Math.min(12_000, Math.max(1_500, say.length * 45)), voiceNoteId: null });
+      beats.push({ index: 1, say, emotion: "semangat", animation: "point_right", citation: t.citations.length ? 0 : null, durationMs: Math.min(12_000, Math.max(1_500, say.length * 45)), voiceNoteId: null });
     }
     const performance: Performance = { id: crypto.randomUUID(), mascotId: "kiko", style: "friend", level: "normal", grounded: t.checkable, beats, citations: t.citations, followUps: [] };
     await logActivity(req.member!.notebookId, req.user!.id, "question_asked", undefined);

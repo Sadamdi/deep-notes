@@ -100,7 +100,7 @@ describe("playing a session: grading, points, streak, badges", () => {
       const r = await u.agent.post(`/api/v1/notebooks/${nb}/sessions/${s.id}/rounds/${i}/answer`).send({ answers: perfect(round), elapsedMs: 10_000 });
       expect(r.status, round.type).toBe(201);
       expect(r.body.data.correctCount, round.type).toBe(round.items.length);
-      expect(r.body.data.reaction).toEqual({ animation: "celebrate", emotion: "happy" });
+      expect(r.body.data.reaction).toEqual({ animation: "celebrate", emotion: "semangat" });
       expect(r.body.data.results[0]).toHaveProperty("explanation");
       total += r.body.data.points;
     }
@@ -127,7 +127,7 @@ describe("playing a session: grading, points, streak, badges", () => {
     expect((await u.agent.post(`${base}/rounds/0/answer`).send({ answers: [true] })).status).toBe(400); // wrong count
     const r = await u.agent.post(`${base}/rounds/0/answer`).send({ answers: wrong });
     expect(r.body.data.correctCount).toBe(0);
-    expect(r.body.data.reaction).toEqual({ animation: "sad", emotion: "encouraging" });
+    expect(r.body.data.reaction).toEqual({ animation: "sad", emotion: "semangat" });
     expect((await u.agent.post(`${base}/rounds/0/answer`).send({ answers: wrong })).status).toBe(409);
     expect((await u.agent.post(`${base}/rounds/9/answer`).send({ answers: [true] })).status).toBe(404);
     const fin = (await u.agent.post(`${base}/finish`)).body.data;
@@ -232,7 +232,7 @@ describe("teach-back and visualisation", () => {
     const good = await u.agent.post(url).send({ topic: "Topologi bintang", explanation: STAR_TEXT });
     expect(good.status).toBe(200);
     expect(good.body.data.evaluation).toMatchObject({ checkable: true, understood: "yes" });
-    expect(good.body.data.performance.beats[0]).toMatchObject({ animation: "nod", emotion: "happy" });
+    expect(good.body.data.performance.beats[0]).toMatchObject({ animation: "nod", emotion: "senang" });
     const weak = await u.agent.post(url).send({ topic: "Topologi bintang", explanation: "Topologi bintang menghubungkan semua perangkat ke satu switch pusat. kemudian lalu setelah itu dan seterusnya begitulah" });
     expect(weak.body.data.evaluation.understood).not.toBe("yes");
     expect(weak.body.data.performance.beats.length).toBe(2); // reply plus what is missing

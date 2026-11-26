@@ -15,3 +15,7 @@ Business rules
 Account management (added 24 Nov): `POST /me/password` (needs the current password; ends other devices), `POST /me/logout-all`, `GET /me/export`, `DELETE /me`.
 - BR-07 Deleting an account needs the password and is refused while the user owns notebooks (delete them first). It removes the user's sources, questions, quiz attempts, assignments, activity and memberships.
 - BR-08 Expired sessions and long-expired invites are removed at start and every 6 hours.
+
+## Frontend screens
+
+`/login` and `/register` share the responsive authentication frame from the Figma `Design Lagi` page. The forms keep the existing shared Zod schemas and `/auth/login` and `/auth/register` mutations. Password visibility is a local control; field errors and API errors remain visible as text. Password reset remains an explanatory route because the API contract does not define a reset endpoint.

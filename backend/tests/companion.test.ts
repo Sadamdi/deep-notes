@@ -1,6 +1,6 @@
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { ANIMATIONS, performanceSchema } from "@deep-notes/shared";
+import { ANIMATIONS, BUBI_EMOTIONS, performanceSchema } from "@deep-notes/shared";
 import { env } from "../src/config/env.js";
 import type { Db } from "../src/db/index.js";
 import { waitForIngestion } from "../src/modules/sources/ingest.js";
@@ -20,9 +20,10 @@ describe("companion catalog and demo (no login, for the frontend)", () => {
     expect(r.status).toBe(200);
     const d = r.body.data;
     expect(d.animations).toEqual([...ANIMATIONS]);
+    expect(d.emotions).toEqual(BUBI_EMOTIONS);
     expect(d.mascots.map((m: { role: string }) => m.role).sort()).toEqual(["coach", "friend", "teacher"]);
     expect(d.mascots[0].animations.length).toBe(ANIMATIONS.length);
-    expect(d.reactions.quiz_perfect).toEqual({ animation: "celebrate", emotion: "happy" });
+    expect(d.reactions.quiz_perfect).toEqual({ animation: "celebrate", emotion: "semangat" });
     expect(d.upload.extensions).toEqual(expect.arrayContaining([".pdf", ".pptx", ".docx", ".xlsx", ".csv", ".png"]));
     // every reaction must use a clip that exists in the vocabulary
     for (const v of Object.values(d.reactions) as Array<{ animation: string }>) expect(ANIMATIONS).toContain(v.animation);
@@ -45,7 +46,7 @@ describe("POST /notebooks/:id/companion/explain", () => {
     const p = r.body.data.performance;
     expect(performanceSchema.safeParse(p).success).toBe(true);
     expect(p).toMatchObject({ grounded: true, style: "friend", level: "simple", mascotId: "mimi" });
-    expect(p.beats[1].animation).toBe("write_on_board"); // "moonwalk" is not in the vocabulary: default for emotion neutral
+    expect(p.beats[1]).toMatchObject({ animation: "write_on_board", emotion: "idle" }); // old stored/model labels normalize to Figma expressions
     expect(p.beats[1].citation).toBe(0);
     expect(p.beats[2].citation).toBeNull(); // the model cited source 99, which does not exist
     expect(p.beats.every((b: { say: string }) => b.say.length > 0)).toBe(true);
@@ -60,7 +61,7 @@ describe("POST /notebooks/:id/companion/explain", () => {
     const p = r.body.data.performance;
     expect(p).toMatchObject({ grounded: false, style: "teacher", level: "normal", mascotId: "kiko" });
     expect(p.beats).toHaveLength(1);
-    expect(p.beats[0]).toMatchObject({ animation: "shrug", emotion: "concerned" });
+    expect(p.beats[0]).toMatchObject({ animation: "shrug", emotion: "sedih" });
   });
 
   it("validates input, requires login and membership, and counts as a contribution", async () => {

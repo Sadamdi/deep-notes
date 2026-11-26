@@ -86,14 +86,17 @@ Scanned PDFs (no text layer) are accepted: the response is the same `202`, and t
 | Method | Path | Body | Result |
 |---|---|---|---|
 | POST | `/notebooks/:id/ask` | `{question}` | `{id, grounded, text, citations: [{sourceId, sourceTitle, page, quote}]}`; when `grounded` is false the text is the fixed refusal and `citations` is empty |
-| POST | `/notebooks/:id/explain` | `{question}` | `{id, grounded, steps: [{text, emotion}], citations}`; `emotion` is one of neutral, curious, happy, thinking, encouraging, concerned |
+| POST | `/notebooks/:id/explain` | `{question}` | `{id, grounded, steps: [{text, emotion}], citations}`; `emotion` is one of `idle`, `senang`, `sedih`, `marah`, `antusias`, `semangat` |
+| POST | `/notebooks/:id/ai/assist` | `{task: suggest_questions\|summarize\|draft\|practice_guide, input, sourceIds?}` | `{grounded, text, items, citations}`; assistant actions use ready sources and return the fixed not-found response without validated citations |
 | GET | `/notebooks/:id/questions?limit=` | none | history with `askedByName` |
 | DELETE | `/notebooks/:id/questions/:questionId` | none | the asker or the owner |
+
+For ask, explain, and assist, omitted `sourceIds` means all ready sources in the notebook. An explicit `sourceIds` list limits retrieval to those sources. AI assist results are not persisted; callers must review before applying them.
 
 ### Quizzes (F-05, F-09, F-15)
 | Method | Path | Body | Result |
 |---|---|---|---|
-| POST | `/notebooks/:id/quizzes` | `{kind?: practice\|weekly\|exam, count?, topic?, sourceId?, title?, timeLimitSec?, perQuestionSec?, dueAt?}` | `201 {id, questionCount}`; weekly needs `dueAt`, exam needs `timeLimitSec` |
+| POST | `/notebooks/:id/quizzes` | `{kind?: practice\|weekly\|exam, count?, topic?, sourceId?, sourceIds?, title?, timeLimitSec?, perQuestionSec?, dueAt?}` | `201 {id, questionCount}`; weekly needs `dueAt`, exam needs `timeLimitSec` |
 | GET | `/notebooks/:id/quizzes` | none | list with `myAttempts`, `myBest` |
 | GET | `/notebooks/:id/quizzes/:quizId` | none | `{questions: [{question, options[4], topic}], ...}` with no answers |
 | POST | `/notebooks/:id/quizzes/:quizId/start` | none | exam only: starts the server clock |
@@ -154,4 +157,4 @@ Full description: [GAME_CONTRACT.md](GAME_CONTRACT.md).
 |---|---|---|
 | GET | `/health` | `{status, service, time}` |
 
-Planned, not built: F-13 voice is frontend only (browser speech APIs).
+Planned, not built: F-13 voice is frontend only (browser speech APIs). Designed frontend behavior that has no verified route/schema is tracked in [the frontend API handoff](frontend/API_HANDOFF.md); no speculative routes are called from the UI.

@@ -29,3 +29,11 @@ pnpm --filter @deep-notes/frontend build
 Proxy pengembangan ke backend `:4000` diatur di `vite.config.ts`. Desain dan komponen: [../docs/DESIGN_SYSTEM.md](../docs/DESIGN_SYSTEM.md).
 
 Catatan: dokumentasi tambahan khusus frontend (halaman, komponen, state) ditulis oleh tim frontend di folder ini atau di `../docs/features/`, dengan format yang sama seperti dokumen fitur backend.
+
+## UI coverage and known backend gaps
+
+- [Final Figma route and responsive coverage](../docs/frontend/FIGMA_COVERAGE.md)
+- [Backend/API handoff for unsupported screens](../docs/frontend/API_HANDOFF.md)
+- [Frontend experience rules and verification limits](../docs/features/12-frontend/experience.md)
+
+Workspace notes, discussion entries, saved-post selections, and Studio drafts are stored in this browser only. The UI labels these states; they are not account-synced or shared with other workspace members. `/recover` does not submit a reset request. Publication/article screens remain handoffs until an API contract is added.

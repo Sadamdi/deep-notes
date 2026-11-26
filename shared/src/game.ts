@@ -89,4 +89,6 @@ export const createPostSchema = z.object({
     .discriminatedUnion("type", [z.object({ type: z.literal("notebook"), notebookId: z.string().uuid() }), z.object({ type: z.literal("result"), sessionId: z.string().uuid() })])
     .optional(),
 });
+export type CreatePostInput = z.infer<typeof createPostSchema>;
 export const createCommentSchema = z.object({ body: z.string().trim().min(1).max(300) });
+export type CreateCommentInput = z.infer<typeof createCommentSchema>;

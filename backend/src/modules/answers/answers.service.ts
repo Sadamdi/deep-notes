@@ -46,7 +46,8 @@ const explainLlm = z.object({
 const assistLlm = z.object({
   grounded: z.boolean(),
   text: z.string().default(""),
-  items: z.array(z.string()).max(8).default([]),
+  // suggested questions name their passage per item, because the model tends to leave "citations" empty for them
+  items: z.array(z.union([z.string(), z.object({ question: z.string(), n: z.number().int() })])).max(8).default([]),
   citations: z.array(llmCitation).default([]),
 });
 
@@ -120,7 +121,7 @@ export async function explainQuestion(notebookId: string, question: string, sour
 const assistNotFound = (): WorkspaceAiAssistResponse => ({ grounded: false, text: NOT_FOUND_TEXT, items: [], citations: [] });
 
 const assistInstructions: Record<WorkspaceAiAssistInput["task"], string> = {
-  suggest_questions: "Buat 3 sampai 5 pertanyaan belajar terbuka yang jawabannya dapat ditemukan di sumber. Masukkan setiap pertanyaan ke items.",
+  suggest_questions: "Buat 3 sampai 5 pertanyaan belajar terbuka yang jawabannya dapat ditemukan di sumber. Masukkan setiap pertanyaan ke items. Untuk tugas ini setiap elemen items berbentuk {\"question\": string, \"n\": nomor sumber yang memuat jawabannya}.",
   summarize: "Buat ringkasan singkat dan setia pada sumber. Jangan menambah fakta dari konteks pengguna yang tidak didukung sumber.",
   draft: "Bantu susun atau perbaiki draf pengguna dengan fakta yang didukung sumber. Pertahankan maksud pengguna, dan tandai bagian yang tidak bisa dipastikan dari sumber.",
   practice_guide: "Buat panduan belajar singkat berdasarkan sumber dan masukkan sampai 5 latihan/pertanyaan ke items.",
@@ -136,9 +137,12 @@ export async function assistFromWorkspaceSources(notebookId: string, input: Work
     user: `SUMBER:\n${sourcesBlock(chunks)}\n\nKONTEKS PENGGUNA:\n${input.input}`,
     schema: assistLlm,
   });
-  const citations = validateCitations(result.citations, chunks);
+  // a question pointing at a passage we did not retrieve has no basis and is dropped
+  const usable = result.items.filter((item) => typeof item === "string" || chunks[item.n - 1]);
+  const itemCitations = usable.flatMap((item) => (typeof item === "string" ? [] : [{ n: item.n, quote: "" }]));
+  const citations = validateCitations([...result.citations, ...itemCitations], chunks);
   if (!result.grounded || !result.text.trim() || !citations.length) return assistNotFound();
-  const items = result.items.map((item) => item.trim()).filter(Boolean).slice(0, 8);
+  const items = usable.map((item) => (typeof item === "string" ? item : item.question).trim()).filter(Boolean).slice(0, 8);
   if (input.task === "suggest_questions" && items.length === 0) return assistNotFound();
   return { grounded: true, text: result.text.trim(), items, citations };
 }

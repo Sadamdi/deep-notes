@@ -34,3 +34,7 @@ Figma SVG exports flatten Bubi variants but use expression-specific part ids. Ma
 ## [tooling] Resolve workspace verification executables from the package that owns them; Vite
 Resolve workspace verification executables from the package that owns them; Vite is linked under frontend/node_modules/.bin while the shared TypeScript binary is linked at the repository root.
 (dicatat 2026-11-26)
+
+## [ai] Model asli bisa mengosongkan citations untuk tugas yang menghasilkan daftar; min
+Model asli bisa mengosongkan citations untuk tugas yang menghasilkan daftar; minta nomor sumber per item. Periksa balasan mentah model sebelum menyimpulkan akar bug, fake AI di tes tidak meniru perilaku ini.
+(dicatat 2026-11-26)

@@ -5,6 +5,7 @@ Every task gets an entry: a `Plan` before code, `Released` after it is merged an
 
 | Version | Date | Type | Title | Status | File |
 |---|---|---|---|---|---|
+| v0.0.10 | 2026-11-26 | Fix | Gateway timeout, upload limit, classroom and concept map visuals | In Progress | [v20261126-timeout-and-visuals.md](v20261126-timeout-and-visuals.md) |
 | v0.0.9 | 2026-11-26 | Fix | Fixes found in local browser testing | In Progress | [v20261126-fixes-after-qa.md](v20261126-fixes-after-qa.md) |
 | v0.0.8 | 2026-11-26 | Config | Frontend deployment on Vercel | In Progress | [v20261126-frontend-vercel-deploy.md](v20261126-frontend-vercel-deploy.md) |
 | v0.0.7 | 2026-11-26 | Feature | Authentication screens aligned with Design Lagi | In Progress | [v20261126-auth-design-lagi.md](v20261126-auth-design-lagi.md) |

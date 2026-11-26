@@ -123,6 +123,7 @@ Rules learned the hard way:
 ### 9.2 Stable public address (25 Nov 2026)
 The API is reachable at **https://deepnotes-api.vercel.app** through a small gateway on Vercel (project `deepnotes-api`, free plan, source in `deploy/gateway/`). It forwards `/api/*` to the current tunnel address read from `deploy/server-url.json` on `main`, so frontend code never depends on the tunnel address.
 - After a tunnel restart: `DEPLOY_HOST=root@<server-ip> node scripts/update-server-url.mjs`, then commit and push. The gateway uses the new address within about half a minute.
+- It runs on the Node.js runtime with `maxDuration` 100 seconds: an edge function must answer within 25 seconds, which cut off slow AI requests (game sessions, concept maps).
 - Redeploy the gateway only when `deploy/gateway/` changes (Vercel dashboard or the Vercel MCP `create_deployment` with those files). It has no secrets and no environment variables.
 - Limits: request bodies up to about 4.5 MB (Vercel), so uploads above that fail with `413` through the gateway; the server itself accepts 15 MB. Anyone who can push to `main` can repoint the gateway, so keep push access small.
 - A permanent fix needs a domain on Cloudflare and a named tunnel (free tunnel, domain costs); then the gateway becomes unnecessary.

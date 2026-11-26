@@ -113,7 +113,7 @@ export function WorkspacePage() {
         <Link className="rounded-full px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-foreground" to={`/workspaces/${notebookId}/team`}>Ruang kelompok</Link>
         <Link className="rounded-full px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-foreground" to={`/workspaces/${notebookId}/discussion`}>Diskusi</Link>
         <Link className="rounded-full px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-foreground" to={`/workspaces/${notebookId}/notes`}>Catatan</Link>
-        <Link className="rounded-full px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-foreground" to={`/workspaces/${notebookId}/class`}>Kelas 3D</Link>
+        <Link className="rounded-full px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-foreground" to={`/workspaces/${notebookId}/class`}>Kelas Bubi</Link>
         <Link className="rounded-full px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-foreground" to={`/workspaces/${notebookId}/visualization`}>Visualisasi materi</Link>
       </nav>
 

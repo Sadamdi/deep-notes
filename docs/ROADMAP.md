@@ -2,7 +2,7 @@
 
 Detailed plan with owners, priorities and dates: [PLAN_SEMIFINAL.md](PLAN_SEMIFINAL.md). This file is the status view; update the status column when an item is verified.
 
-Key dates (from the official handbook; they may change): semifinal submission **30 Nov 2026** (proposal PDF and a video of at most 2 minutes), Top 10 announcement 7 Dec, Final Day **16 Dec** (working prototype, 10 minute demo, Q&A).
+Key dates (from the official handbook; they may change): semifinal submission **30 Nov 2026** (proposal PDF and a video of at most 2 minutes), Top 10 announcement 7 Dec, Final Day **19 Dec** (working prototype, 10 minute demo, Q&A).
 
 Status legend: `done` (exists in the code, tested, verified), `in progress`, `next`, `later`.
 

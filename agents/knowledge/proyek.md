@@ -10,7 +10,7 @@ Aku Nak Menang Hackathon: Sulthan Adam Rahmadi (ketua; backend dan setup repo), 
 - Case: Case 1 Smarter Campus and Learning. Konsep: notebook belajar kelompok yang menjawab hanya dari sumber kelompok dengan sitasi sumber dan halaman, kuis otomatis, kontribusi terlihat.
 
 ## Tanggal (dari handbook; bisa berubah)
-Semifinal (proposal + video) 30 Nov · pengumuman Top 10 7 Des · Final Day 16 Des (prototipe bekerja + demo 10 menit).
+Semifinal (proposal + video) 30 Nov · pengumuman Top 10 7 Des · Final Day 19 Des (prototipe bekerja + demo 10 menit).
 
 ## Hasil preliminary (23 Nov 2026)
 Skor 69/100 (satu juri): masalah 3/5, kecocokan case 4/5, nilai dan orisinalitas 3/5, kelayakan 4/5, kejelasan abstrak 4/5. Keluhan: survei hanya 6 orang, perbandingan fitur dengan NotebookLM tidak ada, model belum dipilih. Rinci dan respons: `docs/product/PRELIM_FEEDBACK.md`.

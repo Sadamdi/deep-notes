@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { BUBI_EMOTIONS, emotionSchema, type Emotion } from "@deep-notes/shared";
+import { ANIMATIONS, BUBI_EMOTIONS, emotionSchema, type Emotion } from "@deep-notes/shared";
 import { BubiMascot, getBubiArtwork, getBubiMotion, getBubiPlaybackKey, namespaceBubiArtwork, prepareBubiArtwork } from "./BubiMascot";
 
 describe("Bubi expressions", () => {
@@ -39,12 +39,14 @@ describe("Bubi expressions", () => {
     expect(legacyMarkup).toContain('src="/assets/bubi-antusias.svg"');
   });
 
-  it.each(["wave", "nod", "think", "lean_in", "celebrate"] as const)("keeps the supported %s motion", (animation) => {
+  it.each(ANIMATIONS.filter((name) => name !== "idle"))("plays the %s clip with a matching style rule", (animation) => {
     expect(getBubiMotion(animation)).toBe(animation);
+    const css = readFileSync(new URL("../../index.css", import.meta.url), "utf8");
+    expect(css).toContain(`[data-motion="${animation}"]`);
   });
 
-  it("uses a still pose for unimplemented or unavailable motion", () => {
-    expect(getBubiMotion("dance")).toBe("idle");
+  it("uses a still pose for idle or unavailable motion", () => {
+    expect(getBubiMotion("idle")).toBe("idle");
     expect(getBubiMotion("wave", ["idle"])).toBe("idle");
     expect(getBubiMotion()).toBe("idle");
     expect(getBubiArtwork("unexpected emotion")).toBe("idle");

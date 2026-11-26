@@ -243,6 +243,253 @@
     72% { transform: rotate(4deg); }
   }
 
+  .bubi-mascot-motion__pose[data-motion="shake_head"] {
+    animation: bubi-shake-head-pose 520ms ease-in-out 1 both;
+  }
+
+  .bubi-mascot-motion__pose[data-motion="point_left"] .bubi-part--arm-left {
+    animation: bubi-point-left-arm-left 700ms ease-in-out 1 both;
+  }
+
+  .bubi-mascot-motion__pose[data-motion="point_left"] {
+    animation: bubi-point-left-pose 700ms ease-in-out 1 both;
+  }
+
+  .bubi-mascot-motion__pose[data-motion="point_right"] .bubi-part--arm-right {
+    animation: bubi-point-right-arm-right 700ms ease-in-out 1 both;
+  }
+
+  .bubi-mascot-motion__pose[data-motion="point_right"] {
+    animation: bubi-point-right-pose 700ms ease-in-out 1 both;
+  }
+
+  .bubi-mascot-motion__pose[data-motion="point_up"] .bubi-part--arm-right {
+    animation: bubi-point-up-arm-right 700ms ease-in-out 1 both;
+  }
+
+  .bubi-mascot-motion__pose[data-motion="read_book"] .bubi-part--arm-left {
+    animation: bubi-read-book-arm-left 900ms ease-in-out 1 both;
+  }
+
+  .bubi-mascot-motion__pose[data-motion="read_book"] .bubi-part--arm-right {
+    animation: bubi-read-book-arm-right 900ms ease-in-out 1 both;
+  }
+
+  .bubi-mascot-motion__pose[data-motion="read_book"] {
+    animation: bubi-read-book-pose 900ms ease-in-out 1 both;
+  }
+
+  .bubi-mascot-motion__pose[data-motion="hold_magnifier"] .bubi-part--arm-right {
+    animation: bubi-hold-magnifier-arm-right 900ms ease-in-out 1 both;
+  }
+
+  .bubi-mascot-motion__pose[data-motion="hold_magnifier"] {
+    animation: bubi-hold-magnifier-pose 900ms ease-in-out 1 both;
+  }
+
+  .bubi-mascot-motion__pose[data-motion="write_on_board"] .bubi-part--arm-right {
+    animation: bubi-write-on-board-arm-right 360ms ease-in-out 3 both;
+  }
+
+  .bubi-mascot-motion__pose[data-motion="raise_hand"] .bubi-part--arm-right {
+    animation: bubi-raise-hand-arm-right 800ms ease-in-out 1 both;
+  }
+
+  .bubi-mascot-motion__pose[data-motion="shrug"] .bubi-part--arm-left {
+    animation: bubi-shrug-arm-left 640ms ease-in-out 1 both;
+  }
+
+  .bubi-mascot-motion__pose[data-motion="shrug"] .bubi-part--arm-right {
+    animation: bubi-shrug-arm-right 640ms ease-in-out 1 both;
+  }
+
+  .bubi-mascot-motion__pose[data-motion="thumbs_up"] .bubi-part--arm-right {
+    animation: bubi-thumbs-up-arm-right 640ms ease-in-out 1 both;
+  }
+
+  .bubi-mascot-motion__pose[data-motion="thumbs_up"] {
+    animation: bubi-thumbs-up-pose 640ms ease-in-out 1 both;
+  }
+
+  .bubi-mascot-motion__pose[data-motion="clap"] .bubi-part--arm-left {
+    animation: bubi-clap-arm-left 260ms ease-in-out 3 both;
+  }
+
+  .bubi-mascot-motion__pose[data-motion="clap"] .bubi-part--arm-right {
+    animation: bubi-clap-arm-right 260ms ease-in-out 3 both;
+  }
+
+  .bubi-mascot-motion__pose[data-motion="jump"] {
+    animation: bubi-jump-pose 560ms ease-in-out 2 both;
+  }
+
+  .bubi-mascot-motion__pose[data-motion="sad"] {
+    animation: bubi-sad-pose 900ms ease-in-out 1 both;
+  }
+
+  .bubi-mascot-motion__pose[data-motion="facepalm"] .bubi-part--arm-right {
+    animation: bubi-facepalm-arm-right 900ms ease-in-out 1 both;
+  }
+
+  .bubi-mascot-motion__pose[data-motion="facepalm"] .bubi-part--head {
+    animation: bubi-facepalm-head 900ms ease-in-out 1 both;
+  }
+
+  .bubi-mascot-motion__pose[data-motion="sleepy"] {
+    animation: bubi-sleepy-pose 1800ms ease-in-out 2 both;
+  }
+
+  .bubi-mascot-motion__pose[data-motion="dance"] {
+    animation: bubi-dance-pose 600ms ease-in-out 3 both;
+  }
+
+  .bubi-mascot-motion__pose[data-motion="dance"] .bubi-part--arm-left {
+    animation: bubi-dance-arm-left 600ms ease-in-out 3 both;
+  }
+
+  .bubi-mascot-motion__pose[data-motion="dance"] .bubi-part--arm-right {
+    animation: bubi-dance-arm-right 600ms ease-in-out 3 both;
+  }
+
+  @keyframes bubi-shake-head-pose {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    50% { transform: translateX(4px); }
+    75% { transform: translateX(-2px); }
+  }
+
+  @keyframes bubi-point-left-arm-left {
+    0%, 100% { transform: rotate(0); }
+    35%, 70% { transform: rotate(24deg); }
+  }
+
+  @keyframes bubi-point-left-pose {
+    0%, 100% { transform: translateX(0); }
+    35%, 70% { transform: translateX(-3px); }
+  }
+
+  @keyframes bubi-point-right-arm-right {
+    0%, 100% { transform: rotate(0); }
+    35%, 70% { transform: rotate(-24deg); }
+  }
+
+  @keyframes bubi-point-right-pose {
+    0%, 100% { transform: translateX(0); }
+    35%, 70% { transform: translateX(3px); }
+  }
+
+  @keyframes bubi-point-up-arm-right {
+    0%, 100% { transform: rotate(0); }
+    35%, 70% { transform: rotate(-55deg); }
+  }
+
+  @keyframes bubi-read-book-arm-left {
+    0%, 100% { transform: rotate(0); }
+    30%, 80% { transform: rotate(-16deg); }
+  }
+
+  @keyframes bubi-read-book-arm-right {
+    0%, 100% { transform: rotate(0); }
+    30%, 80% { transform: rotate(16deg); }
+  }
+
+  @keyframes bubi-read-book-pose {
+    0%, 100% { transform: rotate(0); }
+    50% { transform: translateY(2px) rotate(1.5deg); }
+  }
+
+  @keyframes bubi-hold-magnifier-arm-right {
+    0%, 100% { transform: rotate(0); }
+    30%, 75% { transform: rotate(-30deg); }
+  }
+
+  @keyframes bubi-hold-magnifier-pose {
+    0%, 100% { transform: scale(1); }
+    40%, 70% { transform: scale(1.07); }
+  }
+
+  @keyframes bubi-write-on-board-arm-right {
+    0%, 100% { transform: rotate(-18deg); }
+    50% { transform: rotate(-34deg); }
+  }
+
+  @keyframes bubi-raise-hand-arm-right {
+    0%, 100% { transform: rotate(0); }
+    30%, 80% { transform: rotate(-70deg); }
+  }
+
+  @keyframes bubi-shrug-arm-left {
+    0%, 100% { transform: translateY(0) rotate(0); }
+    40%, 70% { transform: translateY(-4px) rotate(14deg); }
+  }
+
+  @keyframes bubi-shrug-arm-right {
+    0%, 100% { transform: translateY(0) rotate(0); }
+    40%, 70% { transform: translateY(-4px) rotate(-14deg); }
+  }
+
+  @keyframes bubi-thumbs-up-arm-right {
+    0%, 100% { transform: rotate(0); }
+    35%, 75% { transform: rotate(-40deg) scale(1.1); }
+  }
+
+  @keyframes bubi-thumbs-up-pose {
+    0%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-3px); }
+  }
+
+  @keyframes bubi-clap-arm-left {
+    0%, 100% { transform: rotate(0); }
+    50% { transform: rotate(-26deg); }
+  }
+
+  @keyframes bubi-clap-arm-right {
+    0%, 100% { transform: rotate(0); }
+    50% { transform: rotate(26deg); }
+  }
+
+  @keyframes bubi-jump-pose {
+    0%, 100% { transform: translateY(0) scale(1, 1); }
+    20% { transform: translateY(0) scale(1.05, 0.94); }
+    55% { transform: translateY(-9px) scale(0.97, 1.04); }
+  }
+
+  @keyframes bubi-sad-pose {
+    0%, 100% { transform: translateY(0) scale(1); }
+    40%, 75% { transform: translateY(4px) scale(0.96); }
+  }
+
+  @keyframes bubi-facepalm-arm-right {
+    0%, 100% { transform: rotate(0); }
+    30%, 75% { transform: rotate(-80deg); }
+  }
+
+  @keyframes bubi-facepalm-head {
+    0%, 100% { transform: rotate(0); }
+    40%, 75% { transform: rotate(4deg); }
+  }
+
+  @keyframes bubi-sleepy-pose {
+    0%, 100% { transform: translateY(0) rotate(0); }
+    50% { transform: translateY(3px) rotate(-5deg); }
+  }
+
+  @keyframes bubi-dance-pose {
+    0%, 100% { transform: translateX(0) rotate(0); }
+    25% { transform: translateX(-4px) rotate(-6deg); }
+    75% { transform: translateX(4px) rotate(6deg); }
+  }
+
+  @keyframes bubi-dance-arm-left {
+    0%, 100% { transform: rotate(0); }
+    50% { transform: rotate(18deg); }
+  }
+
+  @keyframes bubi-dance-arm-right {
+    0%, 100% { transform: rotate(0); }
+    50% { transform: rotate(-18deg); }
+  }
+
   .page-frame {
     width: min(100%, 1600px);
     margin-inline: auto;
@@ -266,6 +513,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .bubi-mascot-motion__pose,
   .bubi-mascot-motion__pose .bubi-part {
     animation: none !important;
     transform: none !important;

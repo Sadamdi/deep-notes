@@ -9,7 +9,7 @@
 | **Type** | Fix |
 | **Area** | deploy / frontend / docs |
 | **Branch** | `adam/fix-live-timeout-visuals` |
-| **PR** | not opened yet |
+| **PR** | #5; gateway region follow-up on `adam/gateway-region` |
 
 ## 1. Why
 
@@ -34,8 +34,9 @@ This entry was written after the code.
 - [x] lint, type-check, frontend tests (35), frontend build (26 Nov 2026)
 - [x] gateway handler called locally against the live server: health and companion catalog 200
 - [x] classroom, concept map and visualisation pages viewed on the local app, no console errors
-- [ ] gateway deployed; a game session longer than 25 seconds succeeds on the live site
-- [ ] frontend deployed
+- [x] gateway and frontend deployed (26 Nov 2026); a solo game session was created on the live site (201 after 24.5 s on the server)
+- [x] classroom page viewed on the live site; concept map and visualisation page checked locally only
+- [x] gateway moved from `iad1` to `pdx1`: median of 15 requests went from 0.80 s to 0.70 s (health) and from 0.74 s to 0.67 s (catalog)
 
 ## 5. Data impact
 

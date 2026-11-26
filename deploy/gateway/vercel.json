@@ -1,3 +1,4 @@
 {
+  "regions": ["pdx1"],
   "rewrites": [{ "source": "/api/:path*", "destination": "/api/gateway?__p=:path*" }]
 }

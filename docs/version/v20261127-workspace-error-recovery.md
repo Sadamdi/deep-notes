@@ -4,7 +4,7 @@
 |---|---|
 | **Version** | v0.0.16 |
 | **Date** | 2026-11-27 |
-| **Status** | In Progress |
+| **Status** | Released |
 | **Author** | Maulvi |
 | **Type** | Fix / Docs |
 | **Area** | frontend / docs |
@@ -20,7 +20,7 @@ Discussion and Notes could leave users on an error screen without a route back t
 - [x] Keep a return-to-learning link visible during loading and API errors in Discussion and Notes.
 - [x] Explain missing AI routes and request validation errors without disabling manual questions.
 - [x] Correct the API handoff documentation and provide the backend team with the deployment requirements.
-- [ ] Merge the existing integration branch into `main`.
+- [x] Merge the existing integration branch into `main`.
 
 | Risk | Impact | Mitigation |
 |---|---|---|

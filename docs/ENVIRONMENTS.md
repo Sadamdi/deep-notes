@@ -59,10 +59,10 @@ Contoh skrip lengkap yang menjalankan seluruh alur (daftar, unggah, tanya, sesi 
 ## 3. Memanggil dari frontend
 
 - **Jangan memanggil alamat server langsung dari browser.** Server hanya mengizinkan asal `https://deep-notes.vercel.app` (CORS) dan cookie sesi bertanda `Secure` dan `SameSite=Lax`, jadi panggilan lintas situs dari `localhost` tidak membawa cookie.
-- **Pakai proxy Vite** supaya browser melihat satu asal: `vite.config.ts` meneruskan `/api` ke alamat di `VITE_API_TARGET` (bawaan `http://localhost:4000`, yaitu backend lokal).
+- **Pakai proxy Vite** supaya browser melihat satu asal: `vite.config.ts` meneruskan `/api` ke alamat di `VITE_API_TARGET` (bawaan `https://deepnotes-api.vercel.app`, server demo).
   ```bash
-  # PowerShell: pakai server demo alih-alih backend lokal
-  $env:VITE_API_TARGET = "https://deepnotes-api.vercel.app"; pnpm --filter @deep-notes/frontend dev
+  # PowerShell: pilih backend lokal secara eksplisit
+  $env:VITE_API_TARGET = "http://localhost:4000"; pnpm --filter @deep-notes/frontend dev
   ```
   Atau buat `frontend/.env.local` (tidak di-commit) berisi `VITE_API_TARGET=<alamat server>`.
 - Semua `fetch` memakai `credentials: "include"`. Respons selalu `{ success, data }` atau `{ success: false, error: { code, message } }`.

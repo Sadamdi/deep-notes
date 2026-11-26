@@ -1,27 +1,32 @@
-# Flow: local-only frontend work and backend handoffs
+# Flow: server-backed frontend inputs and remaining handoffs
 
-Status: implemented in the browser; local persistence is limited to the current device and browser profile.
+Status: implemented locally; the shared demo deployment is pending.
 
 ```mermaid
 flowchart TD
-  A[Open workspace notes] --> B[Load notebook and sources from API]
-  B --> C[Write a personal note and choose a ready source/page]
+  A[Open workspace notes] --> B[Load notebook, sources, and private notes from API]
+  B --> C[Write a personal note and optionally choose a source/page]
   C --> M[Optional: request cited AI help on selected or full note text]
   M --> N[Review output and citations; apply only by user action]
-  N --> D[Save to localStorage on this device]
+  N --> D[POST/PATCH note; show server response]
+  D --> E[Other devices load the same private note from the account API]
   C --> O[Optional: create a reusable source from note text]
   O --> P[POST /notebooks/:id/sources/text and normal ingestion]
-  D --> E[Optional: copy the note into a local Studio draft]
-  F[Open workspace discussion] --> G[Load workspace, member identity, and sources from API]
-  G --> H[Write a message and optionally attach a source]
-  H --> I[Save message to localStorage on this device]
-  J[Save a feed post] --> K[Store post ID in localStorage]
-  K --> L[Fetch the current post with GET /posts/:id]
-  E --> Q[Optional: request cited AI help on selected or full draft text]
-  Q --> R[Review output and citations; apply only by user action]
-  R --> S[Publishing handoff: no publication API is called]
+  D --> F[Optional: open the note in Studio]
+  G[Open workspace discussion] --> H[Load member messages and sources from API]
+  H --> I[Write a message and optionally attach a source]
+  I --> J[POST message; poll for new server messages every five seconds]
+  K[Save a feed post] --> L[POST/DELETE account save state]
+  L --> M2[GET /saved-posts returns saved posts]
+  F --> Q[Load account drafts in Studio]
+  Q --> R[Optional: request cited AI help on selected or full draft text]
+  R --> S[Review output and citations; apply only by user action]
+  S --> T[POST/PATCH draft; show server response]
+  T --> U[Publishing handoff: no publication API is called]
+  V[Find old local items] --> W[User explicitly chooses import]
+  W --> X[Retry-safe API requests; keep browser copy]
 ```
 
-The notes, discussion messages, saved-post IDs, and Studio drafts are not synchronized with another browser or workspace member. The UI states this before a user saves locally. AI assistance sends selected/current editor text only after the user chooses an action; it returns citations but does not save the text or result. Turning a note into a workspace source is also an explicit action. Saved posts are retrieved through the existing `GET /posts/:id`; unavailable or deleted posts are omitted from the local saved list.
+Notes, discussions, drafts, and saved posts now use authenticated APIs. Notes remain private to their author; discussion is shared with notebook members. Old browser items are not uploaded automatically, and their local copies are preserved after explicit import. AI assistance sends selected/current editor text only after the user chooses an action; it returns citations but does not save the text or result. Turning a note into a workspace source is also an explicit action.
 
-The backend handoff is recorded in [API_HANDOFF.md](../frontend/API_HANDOFF.md). Notes, discussion, and drafts remain local; the documented AI assist and source-ingestion endpoints are called only for the user's explicit actions.
+Publication, recovery email, notifications, and live classroom presence remain handoffs in [API_HANDOFF.md](../frontend/API_HANDOFF.md). The new note, discussion, draft, and saved-post endpoints are documented in [API_CONTRACT.md](../API_CONTRACT.md); the shared demo server still needs the migration and backend deployment.

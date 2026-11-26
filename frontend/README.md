@@ -4,7 +4,7 @@ Untuk tim frontend dan desain. Aplikasi web React 19 + TypeScript (Vite, Tailwin
 
 ## Mulai dari mana
 
-0. **Server demo sudah berjalan.** Alamat API tetap `https://deepnotes-api.vercel.app` dan cara mencobanya ada di [../docs/ENVIRONMENTS.md](../docs/ENVIRONMENTS.md). Arahkan dev server ke sana dengan `VITE_API_TARGET`.
+0. **Server demo sudah berjalan.** Alamat API tetap `https://deepnotes-api.vercel.app` dan menjadi target bawaan proxy pengembangan. Untuk backend lokal, atur `VITE_API_TARGET=http://localhost:4000`. Cara lengkap ada di [../docs/ENVIRONMENTS.md](../docs/ENVIRONMENTS.md).
 
 1. Baca [../docs/API_CONTRACT.md](../docs/API_CONTRACT.md) untuk semua endpoint, atau buka Swagger UI di `http://localhost:4000/api/docs` saat backend jalan.
 2. Baca [../docs/COMPANION_CONTRACT.md](../docs/COMPANION_CONTRACT.md) untuk maskot: daftar gerakan, bentuk "penampilan", reaksi, dan unggahan.
@@ -24,6 +24,7 @@ Untuk tim frontend dan desain. Aplikasi web React 19 + TypeScript (Vite, Tailwin
 pnpm --filter @deep-notes/frontend dev          # http://localhost:5173
 pnpm --filter @deep-notes/frontend type-check
 pnpm --filter @deep-notes/frontend build
+pnpm --filter @deep-notes/frontend test:e2e  # browser-backed game and invite flow (Playwright)
 ```
 
 Proxy pengembangan ke backend `:4000` diatur di `vite.config.ts`. Desain dan komponen: [../docs/DESIGN_SYSTEM.md](../docs/DESIGN_SYSTEM.md).
@@ -36,4 +37,4 @@ Catatan: dokumentasi tambahan khusus frontend (halaman, komponen, state) ditulis
 - [Backend/API handoff for unsupported screens](../docs/frontend/API_HANDOFF.md)
 - [Frontend experience rules and verification limits](../docs/features/12-frontend/experience.md)
 
-Workspace notes, discussion entries, saved-post selections, and Studio drafts are stored in this browser only. The UI labels these states; they are not account-synced or shared with other workspace members. `/recover` does not submit a reset request. Publication/article screens remain handoffs until an API contract is added.
+Workspace notes, discussion entries, saved posts, and Studio drafts use authenticated server APIs. Existing browser-local items can be imported from their respective screens; the original browser copies are kept. The new routes require the backend migration to be deployed before using them through the shared demo server. `/recover` does not submit a reset request. Publication/article screens remain handoffs until an API contract is added.

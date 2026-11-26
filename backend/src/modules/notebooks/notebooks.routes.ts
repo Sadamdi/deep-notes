@@ -2,9 +2,15 @@ import crypto from "node:crypto";
 import {
   addMemberSchema,
   changeRoleSchema,
+  createDiscussionMessageSchema,
   createInviteSchema,
   createNotebookSchema,
+  createWorkspaceNoteSchema,
+  discussionQuerySchema,
   joinRequestSchema,
+  noteIdParamsSchema,
+  resourceIdParamsSchema,
+  updateWorkspaceNoteSchema,
   updateNotebookSchema,
 } from "@deep-notes/shared";
 import { Router } from "express";
@@ -14,6 +20,7 @@ import { AppError } from "../../lib/errors.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
 import { notebookAccess, requireAuth } from "../../middleware/auth.js";
 import { validate } from "../../middleware/validate.js";
+import { createNotification } from "../../lib/notifications.js";
 
 export const notebookRoutes = Router();
 notebookRoutes.use(requireAuth);
@@ -27,6 +34,162 @@ async function assertRoomForMember(notebookId: string): Promise<void> {
 }
 
 const FIELDS = `n.id, n.title, n.course, n.description, n.category, n.visibility, n.owner_id AS "ownerId", n.created_at AS "createdAt"`;
+
+const NOTE_FIELDS = `id, title, body, source_id AS "sourceId", page, created_at AS "createdAt", updated_at AS "updatedAt"`;
+
+async function assertNoteAnchor(notebookId: string, sourceId: string | null | undefined, page: number | null | undefined) {
+  if (page != null && !sourceId) throw new AppError("VALIDATION", "A page reference needs a source");
+  if (!sourceId) return;
+  const rows = await (await getDb()).query<{ page_count: number | null }>(
+    "SELECT page_count FROM sources WHERE id = $1 AND notebook_id = $2",
+    [sourceId, notebookId],
+  );
+  if (!rows[0]) throw new AppError("VALIDATION", "The source must belong to this notebook");
+  if (page != null && rows[0].page_count != null && page > rows[0].page_count) {
+    throw new AppError("VALIDATION", `Page must be between 1 and ${rows[0].page_count}`);
+  }
+}
+
+notebookRoutes.get(
+  "/:id/notes",
+  notebookAccess("viewer"),
+  validate("params", resourceIdParamsSchema),
+  asyncHandler(async (req, res) => {
+    const notes = await (await getDb()).query(
+      `SELECT ${NOTE_FIELDS} FROM workspace_notes WHERE notebook_id = $1 AND user_id = $2 ORDER BY updated_at DESC`,
+      [req.member!.notebookId, req.user!.id],
+    );
+    res.json(ok(notes));
+  }),
+);
+
+notebookRoutes.post(
+  "/:id/notes",
+  notebookAccess("viewer"),
+  validate("params", resourceIdParamsSchema),
+  validate("body", createWorkspaceNoteSchema),
+  asyncHandler(async (req, res) => {
+    const input = req.body as { id?: string; title: string; body: string; sourceId?: string | null; page?: number | null };
+    const notebookId = req.member!.notebookId;
+    await assertNoteAnchor(notebookId, input.sourceId, input.page);
+    const db = await getDb();
+    const rows = await db.query(
+      `INSERT INTO workspace_notes(id, notebook_id, user_id, title, body, source_id, page)
+       VALUES (COALESCE($1::uuid, gen_random_uuid()), $2,$3,$4,$5,$6,$7)
+       ON CONFLICT (id) DO NOTHING RETURNING ${NOTE_FIELDS}`,
+      [input.id ?? null, notebookId, req.user!.id, input.title, input.body, input.sourceId ?? null, input.page ?? null],
+    );
+    if (rows[0]) return res.status(201).json(ok(rows[0]));
+    const existing = input.id ? await db.query(
+      `SELECT ${NOTE_FIELDS} FROM workspace_notes WHERE id = $1 AND notebook_id = $2 AND user_id = $3`,
+      [input.id, notebookId, req.user!.id],
+    ) : [];
+    if (!existing[0]) throw new AppError("CONFLICT", "That note ID already belongs to another record");
+    res.json(ok(existing[0]));
+  }),
+);
+
+notebookRoutes.patch(
+  "/:id/notes/:noteId",
+  notebookAccess("viewer"),
+  validate("params", noteIdParamsSchema),
+  validate("body", updateWorkspaceNoteSchema),
+  asyncHandler(async (req, res) => {
+    const db = await getDb();
+    const existing = await db.query<{ id: string; title: string; body: string; sourceId: string | null; page: number | null }>(
+      `SELECT id, title, body, source_id AS "sourceId", page FROM workspace_notes WHERE id = $1 AND notebook_id = $2 AND user_id = $3`,
+      [req.params.noteId, req.member!.notebookId, req.user!.id],
+    );
+    if (!existing[0]) throw new AppError("NOT_FOUND", "Note not found");
+    const input = req.body as { title?: string; body?: string; sourceId?: string | null; page?: number | null };
+    const sourceId = Object.hasOwn(input, "sourceId") ? input.sourceId : existing[0].sourceId;
+    const page = Object.hasOwn(input, "page") ? input.page : existing[0].page;
+    await assertNoteAnchor(req.member!.notebookId, sourceId, page);
+    const rows = await db.query(
+      `UPDATE workspace_notes SET title = $1, body = $2, source_id = $3, page = $4, updated_at = now()
+       WHERE id = $5 AND notebook_id = $6 AND user_id = $7 RETURNING ${NOTE_FIELDS}`,
+      [input.title ?? existing[0].title, input.body ?? existing[0].body, sourceId ?? null, page ?? null, req.params.noteId, req.member!.notebookId, req.user!.id],
+    );
+    res.json(ok(rows[0]));
+  }),
+);
+
+notebookRoutes.delete(
+  "/:id/notes/:noteId",
+  notebookAccess("viewer"),
+  validate("params", noteIdParamsSchema),
+  asyncHandler(async (req, res) => {
+    const rows = await (await getDb()).query(
+      "DELETE FROM workspace_notes WHERE id = $1 AND notebook_id = $2 AND user_id = $3 RETURNING id",
+      [req.params.noteId, req.member!.notebookId, req.user!.id],
+    );
+    if (!rows[0]) throw new AppError("NOT_FOUND", "Note not found");
+    res.json(ok({ deleted: true }));
+  }),
+);
+
+notebookRoutes.get(
+  "/:id/discussion",
+  notebookAccess("viewer"),
+  validate("params", resourceIdParamsSchema),
+  validate("query", discussionQuerySchema),
+  asyncHandler(async (req, res) => {
+    const query = req.query as unknown as { before?: string; limit: number };
+    let cursor: { createdAt: string; id: string } | null = null;
+    if (query.before) {
+      try {
+        const [createdAt, id] = Buffer.from(query.before, "base64url").toString().split("|");
+        if (!createdAt || !id || Number.isNaN(Date.parse(createdAt)) || !/^[0-9a-f-]{36}$/i.test(id)) throw new Error();
+        cursor = { createdAt, id };
+      } catch {
+        throw new AppError("VALIDATION", "Invalid discussion cursor");
+      }
+    }
+    const rows = await (await getDb()).query<{ id: string; authorId: string; authorName: string; body: string; sourceId: string | null; createdAt: Date; cursorCreatedAt: string }>(
+      `SELECT m.id, m.author_id AS "authorId", u.name AS "authorName", m.body, m.source_id AS "sourceId", m.created_at AS "createdAt", m.created_at::text AS "cursorCreatedAt"
+       FROM discussion_messages m JOIN users u ON u.id = m.author_id
+       WHERE m.notebook_id = $1 AND ($2::timestamptz IS NULL OR (m.created_at, m.id) < ($2::timestamptz, $3::uuid))
+       ORDER BY m.created_at DESC, m.id DESC LIMIT $4`,
+      [req.member!.notebookId, cursor?.createdAt ?? null, cursor?.id ?? null, query.limit + 1],
+    );
+    const messages = rows.slice(0, query.limit);
+    const oldest = messages[messages.length - 1];
+    const nextBefore = rows.length > query.limit && oldest ? Buffer.from(`${oldest.cursorCreatedAt}|${oldest.id}`).toString("base64url") : null;
+    res.json(ok({ messages: messages.map(({ cursorCreatedAt: _cursor, ...message }) => message), nextBefore }));
+  }),
+);
+
+notebookRoutes.post(
+  "/:id/discussion",
+  notebookAccess("viewer"),
+  validate("params", resourceIdParamsSchema),
+  validate("body", createDiscussionMessageSchema),
+  asyncHandler(async (req, res) => {
+    const input = req.body as { id?: string; body: string; sourceId?: string | null };
+    if (input.sourceId) {
+      const source = await (await getDb()).query("SELECT 1 FROM sources WHERE id = $1 AND notebook_id = $2", [input.sourceId, req.member!.notebookId]);
+      if (!source.length) throw new AppError("VALIDATION", "The source must belong to this notebook");
+    }
+    const db = await getDb();
+    const rows = await db.query(
+      `INSERT INTO discussion_messages(id, notebook_id, author_id, body, source_id)
+       VALUES (COALESCE($1::uuid, gen_random_uuid()), $2,$3,$4,$5)
+       ON CONFLICT (id) DO NOTHING RETURNING id`,
+      [input.id ?? null, req.member!.notebookId, req.user!.id, input.body, input.sourceId ?? null],
+    );
+    const created = Boolean(rows[0]);
+    if (!created && input.id) {
+      const owned = await db.query("SELECT 1 FROM discussion_messages WHERE id = $1 AND notebook_id = $2 AND author_id = $3", [input.id, req.member!.notebookId, req.user!.id]);
+      if (!owned.length) throw new AppError("CONFLICT", "That message ID already belongs to another record");
+    }
+    const message = await db.query(
+      `SELECT m.id, m.author_id AS "authorId", u.name AS "authorName", m.body, m.source_id AS "sourceId", m.created_at AS "createdAt"
+       FROM discussion_messages m JOIN users u ON u.id = m.author_id WHERE m.id = COALESCE($1::uuid, $2::uuid)`,
+      [input.id ?? null, rows[0]?.id],
+    );
+    res.status(created ? 201 : 200).json(ok(message[0]));
+  }),
+);
 
 notebookRoutes.post(
   "/",
@@ -124,15 +287,25 @@ notebookRoutes.post(
   notebookAccess("owner"),
   validate("body", addMemberSchema),
   asyncHandler(async (req, res) => {
-    const { email, role } = req.body as { email: string; role: string };
+    const body = req.body as { email: string; role: string } | { friendId: string; role: string };
     const db = await getDb();
-    const u = await db.query<{ id: string }>("SELECT id FROM users WHERE email = $1", [email]);
-    if (!u[0]) throw new AppError("NOT_FOUND", "No user with that email");
+    const u = "friendId" in body
+      ? await db.query<{ id: string }>(
+        `SELECT CASE WHEN f.requester_id = $1 THEN f.addressee_id ELSE f.requester_id END AS id FROM friendships f
+         WHERE f.status = 'accepted' AND LEAST(f.requester_id, f.addressee_id) = LEAST($1::uuid, $2::uuid)
+           AND GREATEST(f.requester_id, f.addressee_id) = GREATEST($1::uuid, $2::uuid)`,
+        [req.user!.id, body.friendId],
+      )
+      : await db.query<{ id: string }>("SELECT id FROM users WHERE email = $1", [body.email]);
+    if (!u[0]) throw new AppError("NOT_FOUND", "friendId" in body ? "This account is not an accepted friend" : "No user with that email");
+    if (u[0].id === req.user!.id) throw new AppError("VALIDATION", "You already own this workspace");
     const exists = await db.query("SELECT 1 FROM notebook_members WHERE notebook_id = $1 AND user_id = $2", [req.member!.notebookId, u[0].id]);
     if (exists.length) throw new AppError("CONFLICT", "Already a member");
     await assertRoomForMember(req.member!.notebookId);
-    await db.query("INSERT INTO notebook_members(notebook_id, user_id, role) VALUES ($1,$2,$3)", [req.member!.notebookId, u[0].id, role]);
-    res.status(201).json(ok({ userId: u[0].id, role }));
+    await db.query("INSERT INTO notebook_members(notebook_id, user_id, role) VALUES ($1,$2,$3)", [req.member!.notebookId, u[0].id, body.role]);
+    const room = await db.query<{ title: string }>("SELECT title FROM notebooks WHERE id = $1", [req.member!.notebookId]);
+    await createNotification(db, { recipientId: u[0].id, actorId: req.user!.id, kind: "workspace_member_added", title: "Kamu ditambahkan ke workspace", body: `${req.user!.name} menambahkanmu ke ${room[0]?.title ?? "workspace"}.`, href: `/workspaces/${req.member!.notebookId}` });
+    res.status(201).json(ok({ userId: u[0].id, role: body.role }));
   }),
 );
 
@@ -170,6 +343,54 @@ notebookRoutes.delete(
   }),
 );
 
+notebookRoutes.get(
+  "/:id/classroom/presence",
+  notebookAccess("viewer"),
+  asyncHandler(async (req, res) => {
+    const db = await getDb();
+    const notebookId = req.member!.notebookId;
+    await db.query("DELETE FROM classroom_presence WHERE notebook_id = $1 AND last_seen_at < now() - interval '45 seconds'", [notebookId]);
+    const members = await db.query(
+      `SELECT p.user_id AS "userId", u.name, p.last_seen_at AS "lastSeenAt"
+       FROM classroom_presence p JOIN users u ON u.id = p.user_id
+       WHERE p.notebook_id = $1 ORDER BY p.last_seen_at DESC`,
+      [notebookId],
+    );
+    res.json(ok({ members, expiresAfterSec: 45, heartbeatEverySec: 15 }));
+  }),
+);
+
+notebookRoutes.put(
+  "/:id/classroom/presence",
+  notebookAccess("viewer"),
+  asyncHandler(async (req, res) => {
+    const db = await getDb();
+    const notebookId = req.member!.notebookId;
+    await db.query(
+      `INSERT INTO classroom_presence(notebook_id, user_id, last_seen_at) VALUES ($1,$2,now())
+       ON CONFLICT (notebook_id, user_id) DO UPDATE SET last_seen_at = now()`,
+      [notebookId, req.user!.id],
+    );
+    await db.query("DELETE FROM classroom_presence WHERE notebook_id = $1 AND last_seen_at < now() - interval '45 seconds'", [notebookId]);
+    const members = await db.query(
+      `SELECT p.user_id AS "userId", u.name, p.last_seen_at AS "lastSeenAt"
+       FROM classroom_presence p JOIN users u ON u.id = p.user_id
+       WHERE p.notebook_id = $1 ORDER BY p.last_seen_at DESC`,
+      [notebookId],
+    );
+    res.json(ok({ members, expiresAfterSec: 45, heartbeatEverySec: 15 }));
+  }),
+);
+
+notebookRoutes.delete(
+  "/:id/classroom/presence",
+  notebookAccess("viewer"),
+  asyncHandler(async (req, res) => {
+    await (await getDb()).query("DELETE FROM classroom_presence WHERE notebook_id = $1 AND user_id = $2", [req.member!.notebookId, req.user!.id]);
+    res.json(ok({ present: false }));
+  }),
+);
+
 // ---- invites -------------------------------------------------------------------------------------
 
 notebookRoutes.post(
@@ -193,8 +414,8 @@ inviteRoutes.post(
   "/:token/accept",
   asyncHandler(async (req, res) => {
     const db = await getDb();
-    const inv = await db.query<{ notebook_id: string; role: string; uses: number; max_uses: number; expires_at: Date }>(
-      "SELECT notebook_id, role, uses, max_uses, expires_at FROM invites WHERE token = $1",
+    const inv = await db.query<{ notebook_id: string; role: string; uses: number; max_uses: number; expires_at: Date; owner_id: string; title: string }>(
+      "SELECT i.notebook_id, i.role, i.uses, i.max_uses, i.expires_at, n.owner_id, n.title FROM invites i JOIN notebooks n ON n.id = i.notebook_id WHERE i.token = $1",
       [req.params.token],
     );
     const i = inv[0];
@@ -204,6 +425,7 @@ inviteRoutes.post(
       await assertRoomForMember(i.notebook_id);
       await db.query("INSERT INTO notebook_members(notebook_id, user_id, role) VALUES ($1,$2,$3)", [i.notebook_id, req.user!.id, i.role]);
       await db.query("UPDATE invites SET uses = uses + 1 WHERE token = $1", [req.params.token]);
+      await createNotification(db, { recipientId: req.user!.id, actorId: i.owner_id, kind: "workspace_member_added", title: "Kamu bergabung ke workspace", body: `Undangan ${i.title} berhasil digunakan.`, href: `/workspaces/${i.notebook_id}` });
     }
     res.json(ok({ notebookId: i.notebook_id, role: member.length ? "existing" : i.role }));
   }),
@@ -287,6 +509,13 @@ notebookRoutes.post(
         [req.member!.notebookId, req.params.userId],
       );
     }
+    const notebook = await db.query<{ title: string }>("SELECT title FROM notebooks WHERE id = $1", [req.member!.notebookId]);
+    await createNotification(db, {
+      recipientId: String(req.params.userId), actorId: req.user!.id, kind: "join_request_decision",
+      title: decision === "approve" ? "Permintaan bergabung diterima" : "Permintaan bergabung ditolak",
+      body: `Permintaanmu ke ${notebook[0]?.title ?? "workspace"} ${decision === "approve" ? "diterima" : "ditolak"}.`,
+      href: decision === "approve" ? `/workspaces/${req.member!.notebookId}` : "/discover",
+    });
     res.json(ok({ userId: req.params.userId, status: decision === "approve" ? "approved" : "rejected" }));
   }),
 );

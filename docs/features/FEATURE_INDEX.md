@@ -18,14 +18,15 @@ One document per feature area in `docs/features/<NN-area>/<name>.md`, copied fro
 | F-11 | 09-public | Public notebooks and discovery | P1 | [public.md](09-public/public.md) | implemented (backend) |
 | F-12 | 03-sources | PPTX, DOCX, links | P2 | [ingestion.md](03-sources/ingestion.md) | implemented (backend) |
 | F-13 | n/a | Voice input and output | P2 | browser speech APIs, frontend only | planned (frontend) |
-| F-14 | 09-public | Find study partners | later | [public.md](09-public/public.md) | first version (opt-in, same course) |
+| F-14 | 09-public | Find study partners, manage friends, and invite accepted friends | later | [public.md](09-public/public.md); flow: [friends-and-game](../flows/friends-and-game.md) | implemented locally; verification in progress |
 | F-15 | 05-quizzes | Weekly group quiz with scoreboard | P1 | [quizzes.md](05-quizzes/quizzes.md) | implemented (backend) |
 | F-16 | 08-group | Knowledge gap map | P1 | [group.md](08-group/group.md) | implemented (backend) |
 | F-17 | 08-group | Study assignments per member | P1 | [group.md](08-group/group.md) | implemented (backend) |
-| F-18 | 10-play | Game sessions: automatic game choice, 7 game types, points, streak, badges, duel and group | P1 | [play.md](10-play/play.md) | implemented (backend) |
+| F-18 | 10-play | Game sessions: automatic game choice, 7 game types, points, streak, badges, duel and group | P1 | [play.md](10-play/play.md); flow: [friends-and-game](../flows/friends-and-game.md) | implemented locally; verification in progress |
 | F-19 | 04-answers | Teach-back: explain to the mascot | P1 | [play.md](10-play/play.md) | implemented (backend) |
-| F-20 | 03-sources | Mind map of a source | P2 | [play.md](10-play/play.md) | implemented (backend) |
+| F-20 | 03-sources | Source mind maps, slide timelines, spreadsheet charts, and audio transcripts | P2 | [ingestion.md](03-sources/ingestion.md) | implemented locally; real Gemini transcription pending |
 | F-21 | 11-feed | Social feed: posts, likes, comments, follows | P1 | [feed.md](11-feed/feed.md) | implemented (backend) |
 | UI-01 | 12-frontend | Final Figma frontend experience and API boundaries | P0 | [experience.md](12-frontend/experience.md) | implemented (frontend); live API verification pending |
 | UI-02 | 12-frontend | Contract-driven Bubi expressions and motion | P1 | [bubi-expressions.md](12-frontend/bubi-expressions.md) | implemented (frontend); live API flow not verified |
 | UI-03 | 12-frontend | Source-grounded AI actions across learning tools | P1 | [ai-actions.md](12-frontend/ai-actions.md) | in progress |
+| UI-04 | 12-frontend | Server-backed notes, discussion, drafts, and saved posts | P1 | [server-backed-inputs.md](12-frontend/server-backed-inputs.md) | implemented locally; demo deployment pending |

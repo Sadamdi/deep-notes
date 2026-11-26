@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Bell, BookOpenText, Compass, Home, LogOut, Menu, PenTool, Plus, Sparkles, UserRound } from "lucide-react";
+import { BookOpenText, Compass, Home, LogOut, Menu, PenTool, Plus, Sparkles, UserRound, Users } from "lucide-react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router";
 import type { UserResponse } from "@deep-notes/shared";
 import { Button } from "@/components/ui/button";
 import { AppDialog } from "@/components/shared/AppDialog";
 import { useLogout } from "@/features/auth/useAuth";
+import { NotificationCenter, NotificationTrigger } from "@/components/layout/NotificationCenter";
 
 const primaryLinks = [
   { to: "/home", label: "Beranda", icon: Home },
@@ -13,6 +14,7 @@ const primaryLinks = [
   { to: "/game", label: "Game", icon: Sparkles },
   { to: "/studio", label: "Studio Penulis", icon: PenTool },
   { to: "/profile", label: "Profil", icon: UserRound },
+  { to: "/friends", label: "Teman belajar", icon: Users },
 ];
 
 function initials(name: string) {
@@ -76,13 +78,13 @@ export function AppLayout({ user, children }: { user: UserResponse; children: Re
       </aside>
 
       <div className="min-w-0">
-        <header className="hidden h-16 items-center justify-between border-b bg-background/85 px-7 backdrop-blur-lg lg:flex"><div><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ruang belajar</p><p className="text-sm font-bold text-navy">Halo, {user.name.split(" ")[0]}</p></div><AppDialog description="Pemberitahuan akan muncul di sini setelah layanan notifikasi tersedia." onOpenChange={setNotificationsOpen} open={notificationsOpen} title="Notifikasi" trigger={<Button aria-label="Buka notifikasi" onClick={() => setNotificationsOpen(true)} size="icon" variant="outline"><Bell aria-hidden="true"/></Button>}><div className="rounded-2xl bg-muted/60 p-4"><p className="text-sm font-semibold text-navy">Notifikasi belum aktif</p><p className="mt-1 text-sm leading-6 text-muted-foreground">Backend belum menyediakan endpoint untuk membaca, menyimpan, atau menandai notifikasi. Aktivitas workspace tetap bisa dilihat di ruang kelompok.</p><Button asChild className="mt-4" onClick={() => setNotificationsOpen(false)} variant="outline"><Link to="/workspaces">Buka workspace</Link></Button></div></AppDialog></header>
+        <header className="hidden h-16 items-center justify-between border-b bg-background/85 px-7 backdrop-blur-lg lg:flex"><div><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ruang belajar</p><p className="text-sm font-bold text-navy">Halo, {user.name.split(" ")[0]}</p></div><NotificationTrigger onOpenChange={setNotificationsOpen}/></header>
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/90 px-4 backdrop-blur-lg lg:hidden">
           <Link className="flex items-center gap-2 font-bold text-navy" to="/home">
             <img alt="" className="size-6" src="/assets/brand-deep-notes-mark.svg" />
             Deep Notes
           </Link>
-          <div className="flex items-center gap-2"><AppDialog description="Backend belum menyediakan endpoint untuk membaca atau menandai notifikasi." onOpenChange={setNotificationsOpen} open={notificationsOpen} title="Notifikasi" trigger={<Button aria-label="Buka notifikasi" size="icon" variant="outline"><Bell aria-hidden="true"/></Button>}><div className="rounded-2xl bg-muted/60 p-4"><p className="text-sm font-semibold text-navy">Notifikasi belum aktif</p><p className="mt-1 text-sm leading-6 text-muted-foreground">Lihat aktivitas terbaru melalui ruang kelompok workspace.</p><Button asChild className="mt-4" onClick={() => setNotificationsOpen(false)} variant="outline"><Link to="/workspaces">Buka workspace</Link></Button></div></AppDialog><AppDialog
+          <div className="flex items-center gap-2"><NotificationTrigger onOpenChange={setNotificationsOpen}/><AppDialog
             description={`Masuk sebagai ${user.name}`}
             onOpenChange={setMenuOpen}
             open={menuOpen}
@@ -101,6 +103,7 @@ export function AppLayout({ user, children }: { user: UserResponse; children: Re
             </nav>
           </AppDialog></div>
         </header>
+        <NotificationCenter onOpenChange={setNotificationsOpen} open={notificationsOpen}/>
         <main className="page-frame px-4 py-6 pb-24 sm:px-6 lg:px-7 lg:py-8 lg:pb-10">
           {logoutError && <p className="mb-4 rounded-xl bg-destructive/5 p-3 text-sm text-destructive" role="alert">{logoutError}</p>}
           {children}

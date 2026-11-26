@@ -1,4 +1,4 @@
-import { FileImage, FileSpreadsheet, FileText, Globe2, Presentation } from "lucide-react";
+import { FileAudio2, FileImage, FileSpreadsheet, FileText, Globe2, Presentation } from "lucide-react";
 import { Trash2 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { SourceResponse } from "@deep-notes/shared";
@@ -14,6 +14,7 @@ const kindIcons = {
   xlsx: FileSpreadsheet,
   csv: FileSpreadsheet,
   image: FileImage,
+  audio: FileAudio2,
   link: Globe2,
 } as const;
 

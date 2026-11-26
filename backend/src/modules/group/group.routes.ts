@@ -1,4 +1,4 @@
-import { createAssignmentSchema, profileSchema, updateAssignmentSchema } from "@deep-notes/shared";
+import { createAssignmentSchema, friendRequestSchema, profileSchema, updateAssignmentSchema } from "@deep-notes/shared";
 import { Router } from "express";
 import { getDb } from "../../db/index.js";
 import { ok } from "../../lib/apiResponse.js";
@@ -6,7 +6,9 @@ import { logActivity } from "../../lib/activity.js";
 import { AppError } from "../../lib/errors.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
 import { notebookAccess, requireAuth } from "../../middleware/auth.js";
+import { rateLimit } from "../../middleware/rateLimit.js";
 import { validate } from "../../middleware/validate.js";
+import { createNotification } from "../../lib/notifications.js";
 
 /** Group-level views: contributions (F-06), progress (F-08), knowledge gaps (F-16), assignments (F-17). */
 export const groupRoutes = Router({ mergeParams: true });
@@ -206,5 +208,98 @@ profileRoutes.get(
       [req.user!.id, course],
     );
     res.json(ok({ partners: rows }));
+  }),
+);
+
+const friendRequestLimit = rateLimit({ windowMs: 10 * 60_000, max: 20, key: (req) => `friend-request:${req.user?.id}` });
+
+profileRoutes.get(
+  "/friends",
+  asyncHandler(async (req, res) => {
+    const db = await getDb();
+    const rows = await db.query<{ id: string; userId: string; name: string; course: string | null; createdAt: Date; acceptedAt: Date | null; status: "pending" | "accepted"; requesterId: string }>(
+      `SELECT f.id, CASE WHEN f.requester_id = $1 THEN f.addressee_id ELSE f.requester_id END AS "userId",
+              u.name, u.course, f.created_at AS "createdAt", f.accepted_at AS "acceptedAt", f.status, f.requester_id AS "requesterId"
+       FROM friendships f
+       JOIN users u ON u.id = CASE WHEN f.requester_id = $1 THEN f.addressee_id ELSE f.requester_id END
+       WHERE f.requester_id = $1 OR f.addressee_id = $1
+       ORDER BY f.created_at DESC`,
+      [req.user!.id],
+    );
+    res.json(ok({
+      friends: rows.filter((row) => row.status === "accepted").map(({ userId, name, course, createdAt, acceptedAt }) => ({ id: userId, name, course, since: acceptedAt ?? createdAt })),
+      requests: rows.filter((row) => row.status === "pending").map(({ id, userId, name, course, createdAt, requesterId }) => ({
+        id, userId, name, course, createdAt, direction: requesterId === req.user!.id ? "outgoing" : "incoming",
+      })),
+    }));
+  }),
+);
+
+profileRoutes.post(
+  "/friend-requests",
+  friendRequestLimit,
+  validate("body", friendRequestSchema),
+  asyncHandler(async (req, res) => {
+    const body = req.body as { email: string } | { userId: string };
+    const db = await getDb();
+    const target = "userId" in body
+      ? await db.query<{ id: string }>("SELECT id FROM users WHERE id = $1", [body.userId])
+      : await db.query<{ id: string }>("SELECT id FROM users WHERE email = $1", [body.email]);
+    if (target[0] && target[0].id !== req.user!.id) {
+      const inserted = await db.query<{ id: string }>(
+        "INSERT INTO friendships(requester_id, addressee_id) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING id",
+        [req.user!.id, target[0].id],
+      );
+      if (inserted[0]) await createNotification(db, {
+        recipientId: target[0].id, actorId: req.user!.id, kind: "friend_request",
+        title: "Permintaan teman belajar", body: `${req.user!.name} ingin menjadi teman belajarmu.`, href: "/friends",
+      });
+    }
+    res.status(202).json(ok({ sent: true, message: "Jika akun memenuhi syarat, permintaan akan muncul di halaman Teman." }));
+  }),
+);
+
+profileRoutes.post(
+  "/friend-requests/:requestId/accept",
+  asyncHandler(async (req, res) => {
+    const db = await getDb();
+    const accepted = await db.query<{ id: string; requester_id: string }>(
+      "UPDATE friendships SET status = 'accepted', accepted_at = now() WHERE id::text = $1 AND addressee_id = $2 AND status = 'pending' RETURNING id, requester_id",
+      [req.params.requestId, req.user!.id],
+    );
+    if (accepted[0]) await createNotification(db, {
+      recipientId: accepted[0].requester_id, actorId: req.user!.id, kind: "friend_accepted",
+      title: "Permintaan teman diterima", body: `${req.user!.name} menerima permintaan teman belajarmu.`, href: "/friends",
+    });
+    if (!accepted.length) {
+      const existing = await db.query(
+        "SELECT 1 FROM friendships WHERE id::text = $1 AND addressee_id = $2 AND status = 'accepted'",
+        [req.params.requestId, req.user!.id],
+      );
+      if (!existing.length) throw new AppError("NOT_FOUND", "Friend request not found");
+    }
+    res.json(ok({ accepted: true }));
+  }),
+);
+
+profileRoutes.delete(
+  "/friend-requests/:requestId",
+  asyncHandler(async (req, res) => {
+    await (await getDb()).query(
+      "DELETE FROM friendships WHERE id::text = $1 AND status = 'pending' AND (requester_id = $2 OR addressee_id = $2)",
+      [req.params.requestId, req.user!.id],
+    );
+    res.json(ok({ removed: true }));
+  }),
+);
+
+profileRoutes.delete(
+  "/friends/:userId",
+  asyncHandler(async (req, res) => {
+    await (await getDb()).query(
+      "DELETE FROM friendships WHERE status = 'accepted' AND LEAST(requester_id, addressee_id) = LEAST($1::uuid, $2::uuid) AND GREATEST(requester_id, addressee_id) = GREATEST($1::uuid, $2::uuid)",
+      [req.user!.id, req.params.userId],
+    );
+    res.json(ok({ removed: true }));
   }),
 );

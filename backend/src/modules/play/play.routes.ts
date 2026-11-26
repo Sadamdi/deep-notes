@@ -65,6 +65,7 @@ async function sessionView(s: SessionRow, userId: string) {
   const answered = await (await getDb()).query<{ round_index: number }>("SELECT round_index FROM session_answers WHERE session_id = $1 AND user_id = $2", [s.id, userId]);
   return {
     id: s.id,
+    hostId: s.created_by,
     mode: s.mode,
     status: s.status,
     focusTopic: s.focus_topic,
@@ -142,6 +143,7 @@ playRoutes.post(
     const s = await loadSession(req.member!.notebookId, String(req.params.sid));
     if (s.created_by !== req.user!.id) throw new AppError("FORBIDDEN", "Only the creator can start the session");
     if (s.status !== "waiting") throw new AppError("CONFLICT", "The session already started");
+    if ((await participants(s.id)).length < 2) throw new AppError("CONFLICT", "At least two players must join before the session starts");
     await (await getDb()).query("UPDATE game_sessions SET status = 'running', started_at = now() WHERE id = $1", [s.id]);
     res.json(ok(await sessionView({ ...s, status: "running" }, req.user!.id)));
   }),
@@ -185,7 +187,7 @@ playRoutes.post(
     for (const [i, item] of round.items.entries()) {
       const answer = body.answers[i];
       if (item.type === "teach") {
-        const t = await evaluateTeachBack(s.notebook_id, item.topic, typeof answer === "string" ? answer : "");
+        const t = await evaluateTeachBack(s.notebook_id, item.topic, typeof answer === "string" ? answer : "", [item.ref.sourceId]);
         const fraction = t.checkable ? t.score / 100 : 0;
         fractionSum += fraction;
         points += Math.round(fraction * 200);
@@ -340,14 +342,44 @@ playRoutes.get(
   notebookAccess("viewer"),
   asyncHandler(async (req, res) => {
     const kind = req.query.kind === undefined ? "mindmap" : String(req.query.kind);
-    if (kind !== "mindmap") throw new AppError("VALIDATION", "Only kind=mindmap is supported");
+    if (kind !== "mindmap" && kind !== "timeline" && kind !== "chart") throw new AppError("VALIDATION", "Supported visualizations are mindmap, timeline, and chart");
     const db = await getDb();
     const sid = String(req.params.sourceId);
-    const src = await db.query<{ id: string; title: string; status: string }>("SELECT id, title, status FROM sources WHERE notebook_id = $1 AND id::text = $2", [req.member!.notebookId, sid]);
+    const src = await db.query<{ id: string; title: string; kind: string; status: string }>("SELECT id, title, kind, status FROM sources WHERE notebook_id = $1 AND id::text = $2", [req.member!.notebookId, sid]);
     if (!src[0]) throw new AppError("NOT_FOUND", "Source not found");
     if (src[0].status !== "ready") throw new AppError("CONFLICT", "The source is not ready yet");
+    if (kind === "timeline" && src[0].kind !== "pptx") throw new AppError("VALIDATION", "Timelines are available only for PowerPoint sources");
+    if (kind === "chart" && src[0].kind !== "csv" && src[0].kind !== "xlsx") throw new AppError("VALIDATION", "Charts are available only for CSV or Excel sources");
     const cached = await db.query<{ data: unknown }>("SELECT data FROM source_visuals WHERE source_id = $1 AND kind = $2", [src[0].id, kind]);
     if (cached[0]) return res.json(ok({ sourceId: src[0].id, kind, cached: true, ...(cached[0].data as object) }));
+    if (kind === "timeline") {
+      const rows = await db.query<{ slide: number; text: string }>("SELECT page AS slide, string_agg(content, E'\\n\\n' ORDER BY idx) AS text FROM source_chunks WHERE source_id = $1 AND page IS NOT NULL GROUP BY page ORDER BY page", [src[0].id]);
+      const data = { slides: rows };
+      await db.query("INSERT INTO source_visuals(source_id, kind, data) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING", [src[0].id, kind, JSON.stringify(data)]);
+      return res.json(ok({ sourceId: src[0].id, kind, cached: false, ...data }));
+    }
+    if (kind === "chart") {
+      const rows = await db.query<{ name: string; headers: unknown; rows: unknown }>("SELECT name, headers, rows FROM source_tables WHERE source_id = $1 ORDER BY table_index", [src[0].id]);
+      const tables = rows.map((table) => {
+        const headers = Array.isArray(table.headers) ? table.headers.map(String) : [];
+        const body = Array.isArray(table.rows) ? table.rows as unknown[][] : [];
+        const categoryColumn = headers[0] ?? "Category";
+        const series = headers.slice(1).map((name, index) => ({
+          name,
+          points: body.flatMap((row, rowIndex) => {
+            const raw = row[index + 1];
+            if (raw === null || raw === undefined || String(raw).trim() === "") return [];
+            const value = Number(String(raw).trim());
+            return Number.isFinite(value) ? [{ label: String(row[0] ?? `Row ${rowIndex + 1}`), value }] : [];
+          }),
+        })).filter((item) => item.points.length > 0);
+        return { name: table.name, categoryColumn, series };
+      }).filter((table) => table.series.length > 0);
+      if (!tables.length) throw new AppError("CONFLICT", "No numeric columns were found in this spreadsheet");
+      const data = { tables };
+      await db.query("INSERT INTO source_visuals(source_id, kind, data) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING", [src[0].id, kind, JSON.stringify(data)]);
+      return res.json(ok({ sourceId: src[0].id, kind, cached: false, ...data }));
+    }
     const chunks = await db.query<{ page: number | null; content: string }>("SELECT page, content FROM source_chunks WHERE source_id = $1 ORDER BY idx", [src[0].id]);
     let used = 0;
     const text = chunks.filter((c) => (used += c.content.length) < 9000).map((c) => `${c.page ? `[halaman ${c.page}] ` : ""}${c.content}`).join("\n\n");

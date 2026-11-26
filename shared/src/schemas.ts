@@ -26,7 +26,15 @@ export const updateNotebookSchema = z.object({
 });
 export type UpdateNotebookInput = z.infer<typeof updateNotebookSchema>;
 
-export const addMemberSchema = z.object({ email, role: z.enum(["editor", "viewer"]).default("editor") });
+const memberRoleSchema = z.enum(["editor", "viewer"]).default("editor");
+export const addMemberSchema = z.union([
+  z.object({ email, role: memberRoleSchema }),
+  z.object({ friendId: z.uuid(), role: memberRoleSchema }),
+]);
+export const friendRequestSchema = z.union([
+  z.object({ email }),
+  z.object({ userId: z.uuid() }),
+]);
 export const changeRoleSchema = z.object({ role: z.enum(["editor", "viewer"]) });
 
 export const createInviteSchema = z.object({
@@ -122,3 +130,58 @@ export const changePasswordSchema = z.object({
   newPassword: z.string().min(8).max(128),
 });
 export const deleteAccountSchema = z.object({ password: z.string().min(1).max(128) });
+
+export const createWorkspaceNoteSchema = z.object({
+  id: z.uuid().optional(),
+  title: z.string().trim().min(1).max(120),
+  body: z.string().trim().min(1).max(10_000),
+  sourceId: z.uuid().nullable().optional(),
+  page: z.number().int().positive().nullable().optional(),
+});
+export type CreateWorkspaceNoteInput = z.infer<typeof createWorkspaceNoteSchema>;
+export const updateWorkspaceNoteSchema = createWorkspaceNoteSchema.omit({ id: true }).partial().refine((input) => Object.keys(input).length > 0);
+export type UpdateWorkspaceNoteInput = z.infer<typeof updateWorkspaceNoteSchema>;
+
+export const createDiscussionMessageSchema = z.object({
+  id: z.uuid().optional(),
+  body: z.string().trim().min(1).max(2_000),
+  sourceId: z.uuid().nullable().optional(),
+});
+export type CreateDiscussionMessageInput = z.infer<typeof createDiscussionMessageSchema>;
+export const discussionQuerySchema = z.object({
+  before: z.string().max(100).optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(30),
+});
+
+export const createWriterDraftSchema = z.object({
+  id: z.uuid().optional(),
+  title: z.string().trim().min(1).max(160),
+  summary: z.string().trim().max(400).default(""),
+  body: z.string().max(30_000).default(""),
+});
+export type CreateWriterDraftInput = z.infer<typeof createWriterDraftSchema>;
+export const updateWriterDraftSchema = createWriterDraftSchema.omit({ id: true }).partial().refine((input) => Object.keys(input).length > 0);
+export type UpdateWriterDraftInput = z.infer<typeof updateWriterDraftSchema>;
+
+export const resourceIdParamsSchema = z.object({ id: z.uuid() });
+export const noteIdParamsSchema = z.object({ id: z.uuid(), noteId: z.uuid() });
+export const messageIdParamsSchema = z.object({ id: z.uuid(), messageId: z.uuid() });
+export const draftIdParamsSchema = z.object({ draftId: z.uuid() });
+export const postIdParamsSchema = z.object({ id: z.uuid() });
+export const passwordResetRequestSchema = z.object({ email });
+export const passwordResetConfirmSchema = z.object({ token: z.string().min(32).max(200), newPassword: z.string().min(8).max(128) });
+export const notificationIdParamsSchema = z.object({ notificationId: z.uuid() });
+export const articleIdParamsSchema = z.object({ articleId: z.uuid() });
+export const authorIdParamsSchema = z.object({ authorId: z.uuid() });
+const publicationInputSchema = z.object({
+  articleId: z.uuid().optional(), draftId: z.uuid(), visibility: z.enum(["public", "workspace"]), notebookId: z.uuid().optional(),
+  coverUrl: z.url().max(2000).refine((value) => value.startsWith("https://"), "Use an HTTPS cover URL").nullable().optional(),
+});
+const publicationAudience = <T extends { visibility: "public" | "workspace"; notebookId?: string }>(schema: z.ZodType<T>) => schema
+  .refine((input) => input.visibility !== "workspace" || Boolean(input.notebookId), { message: "A workspace article needs a notebook", path: ["notebookId"] })
+  .refine((input) => input.visibility !== "public" || !input.notebookId, { message: "A public article cannot be scoped to a notebook", path: ["notebookId"] });
+export const publishArticleSchema = publicationAudience(publicationInputSchema);
+export const updatePublishedArticleSchema = publicationAudience(publicationInputSchema.omit({ articleId: true }));
+export const publicationSearchSchema = z.object({ q: z.string().trim().max(100).optional(), cursor: z.string().max(100).optional(), limit: z.coerce.number().int().min(1).max(50).default(20) });
+export const articleCommentSchema = z.object({ body: z.string().trim().min(1).max(2000), parentId: z.uuid().optional() });
+export const classroomPresenceUpdateSchema = z.object({});

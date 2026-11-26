@@ -11,6 +11,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().int().default(4000),
   CORS_ORIGIN: z.string().default("http://localhost:5173"),
+  PUBLIC_APP_URL: z.string().url().default("http://localhost:5173"),
 
   // Database. Put the password in the URL percent-encoded. Do not add sslmode to the URL; use DATABASE_SSL.
   DATABASE_URL: z.string().url().optional(),
@@ -33,6 +34,12 @@ const envSchema = z.object({
   // Embeddings are pinned to one model: vectors from different models are not comparable.
   AI_EMBED_MODEL: z.string().default("gemini-embedding-001"),
   AI_EMBED_DIMENSIONS: z.coerce.number().int().default(768),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(587),
+  SMTP_SECURE: z.enum(["true", "false"]).default("false"),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASSWORD: z.string().optional(),
+  SMTP_FROM: z.string().email().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

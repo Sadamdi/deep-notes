@@ -28,12 +28,3 @@ export function readWorkspaceNotes(notebookId: string): WorkspaceNote[] {
     return [];
   }
 }
-
-export function writeWorkspaceNotes(notebookId: string, notes: WorkspaceNote[]) {
-  try {
-    window.localStorage.setItem(storageKey(notebookId), JSON.stringify(notes));
-    return true;
-  } catch {
-    return false;
-  }
-}

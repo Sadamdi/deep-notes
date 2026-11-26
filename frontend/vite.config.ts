@@ -4,10 +4,9 @@ import path from "node:path";
 import { defineConfig, loadEnv } from "vite";
 
 export default defineConfig(({ mode }) => {
-  // VITE_API_TARGET picks the API the dev server forwards /api to: the local backend by default,
-  // or the shared demo server (address in docs/ENVIRONMENTS.md). Set it in the shell or in frontend/.env.local.
+  // Use the documented demo API unless a developer explicitly selects another backend.
   const env = loadEnv(mode, process.cwd(), "");
-  const target = env.VITE_API_TARGET || "http://localhost:4000";
+  const target = env.VITE_API_TARGET || "https://deepnotes-api.vercel.app";
   return {
     plugins: [react(), tailwindcss()],
     resolve: { alias: { "@": path.resolve(import.meta.dirname, "src") } },

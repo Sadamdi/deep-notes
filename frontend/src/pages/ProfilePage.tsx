@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Link } from "react-router";
-import { Flame, Medal, Settings2, Users } from "lucide-react";
+import { Medal, Settings2, Users } from "lucide-react";
 import { profileSchema, type PartnersResponse, type ProfileUpdateResponse, type ProfileInput, type UserStats } from "@deep-notes/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import { Card } from "@/components/ui/card";
 import { ErrorState, LoadingState, PageTitle } from "@/components/shared/PageStates";
 import { useAuthMe, authQueryKey } from "@/features/auth/useAuth";
 import { api, jsonBody } from "@/lib/api";
+import { StreakCard } from "@/components/shared/StreakCard";
 
 export function ProfilePage() {
   const auth = useAuthMe();
@@ -45,7 +46,7 @@ export function ProfilePage() {
 
   return (
     <div className="space-y-6">
-      <PageTitle action={<Button asChild variant="outline"><Link to="/account"><Settings2 aria-hidden="true" />Pengaturan akun</Link></Button>} description="Lihat perkembangan belajar dan atur profil yang dibagikan kepada teman." eyebrow="Profil" title="Profil saya" />
+      <PageTitle action={<div className="flex flex-wrap gap-2"><Button asChild variant="outline"><Link to="/friends"><Users aria-hidden="true" />Teman belajar</Link></Button><Button asChild variant="outline"><Link to="/account"><Settings2 aria-hidden="true" />Pengaturan akun</Link></Button></div>} description="Lihat perkembangan belajar dan atur profil yang dibagikan kepada teman." eyebrow="Profil" title="Profil saya" />
       <section className="grid gap-5 rounded-3xl border bg-card p-5 sm:grid-cols-[auto_minmax(0,1fr)_minmax(260px,0.8fr)] sm:items-center sm:p-7">
         <span aria-hidden="true" className="grid size-20 place-items-center rounded-full bg-secondary text-2xl font-bold text-navy">{auth.data.name.trim().slice(0, 1).toUpperCase()}</span>
         <div className="min-w-0"><h2 className="text-xl font-bold text-navy">{auth.data.name}</h2><p className="mt-1 text-sm text-muted-foreground">{auth.data.course || "Program studi belum diisi"}</p><p className="mt-1 text-xs text-muted-foreground">{auth.data.email}</p></div>
@@ -58,12 +59,12 @@ export function ProfilePage() {
         </form>
       </section>
 
-      {stats.isPending ? <LoadingState label="Menghitung progres…" /> : stats.isError ? <ErrorState message={stats.error.message} onRetry={() => void stats.refetch()} /> : (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Card className="rounded-3xl p-5 sm:p-6"><div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"><Flame aria-hidden="true" className="size-4 text-warning-foreground" />Streak belajar</div><p className="mt-4 text-4xl font-bold text-warning-foreground">{stats.data.streak} hari</p><p className="mt-2 text-sm text-muted-foreground">Poin: {stats.data.points} · sesi selesai: {stats.data.sessionsPlayed}</p><div aria-label={`${stats.data.streak} hari streak, terbaik ${stats.data.bestStreak}`} className="mt-4 flex gap-1"><span className="h-3 flex-1 rounded-full bg-warning" /><span className={`h-3 flex-1 rounded-full ${stats.data.streak >= 2 ? "bg-warning" : "bg-muted"}`} /><span className={`h-3 flex-1 rounded-full ${stats.data.streak >= 3 ? "bg-warning" : "bg-muted"}`} /><span className={`h-3 flex-1 rounded-full ${stats.data.streak >= 4 ? "bg-warning" : "bg-muted"}`} /><span className={`h-3 flex-1 rounded-full ${stats.data.streak >= 5 ? "bg-warning" : "bg-muted"}`} /></div><p className="mt-2 text-xs text-muted-foreground">Streak terbaik: {stats.data.bestStreak} hari</p></Card>
-          <Card className="rounded-3xl p-5 sm:p-6"><div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"><Medal aria-hidden="true" className="size-4 text-warning-foreground" />Lencana</div><div className="mt-4 flex flex-wrap gap-2">{stats.data.badges.length ? stats.data.badges.map((badge) => <span className="rounded-full bg-secondary px-3 py-2 text-xs font-semibold text-navy" key={badge.id}>{badge.name}</span>) : <p className="text-sm leading-6 text-muted-foreground">Lencana akan muncul setelah kamu menyelesaikan sesi belajar.</p>}</div><p className="mt-4 text-xs text-muted-foreground">{stats.data.badges.length} dari {stats.data.allBadges.length} lencana diraih</p></Card>
-        </div>
-      )}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <StreakCard />
+        {stats.isPending ? <LoadingState label="Memuat lencana…" /> : stats.isError ? <ErrorState message={stats.error.message} onRetry={() => void stats.refetch()} /> : (
+          <Card className="rounded-3xl p-5 sm:p-6"><div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"><Medal aria-hidden="true" className="size-4 text-warning-foreground" />Lencana</div><div className="mt-4 flex flex-wrap gap-2">{stats.data.badges.length ? stats.data.badges.map((badge) => <span className="rounded-full bg-secondary px-3 py-2 text-xs font-semibold text-navy" key={badge.id}>{badge.name}</span>) : <p className="text-sm leading-6 text-muted-foreground">Lencana akan muncul setelah kamu menyelesaikan sesi belajar.</p>}</div><p className="mt-4 text-xs text-muted-foreground">{stats.data.badges.length} dari {stats.data.allBadges.length} lencana diraih</p><p className="mt-2 text-xs text-muted-foreground">Total poin: {stats.data.points.toLocaleString("id-ID")} · sesi selesai: {stats.data.sessionsPlayed}</p></Card>
+        )}
+      </div>
 
       {partnerOptIn && <section className="space-y-3">
         <div className="flex items-center gap-2"><Users aria-hidden="true" className="size-4 text-teal" /><h2 className="font-bold text-navy">Partner belajar</h2></div>

@@ -4,7 +4,7 @@ Status: implemented and tested.
 
 Endpoints: `POST /notebooks/:id/quizzes`, `GET /quizzes`, `GET /quizzes/:quizId`, `POST /quizzes/:quizId/start`, `POST /quizzes/:quizId/attempts`, `GET /quizzes/:quizId/scoreboard`, `GET /quizzes/:quizId/attempts/mine`.
 
-Generation: passages are picked across the notebook's ready sources (or nearest to a given topic), the model writes one 4-option question per passage, options are shuffled on the server, and each item stores its source and page, a short topic label and an explanation.
+Generation: passages are picked across the notebook's ready sources (or nearest to a given topic), the model writes one 4-option question per passage, options are shuffled on the server, and each item stores its source and page, a short topic label and an explanation. The active source scope is sent with the topic, so topic retrieval stays inside the selected ready sources. Leaving the topic blank uses readable material from all selected sources.
 
 Business rules
 - BR-01 Needs at least 3 readable passages; creating a quiz needs the editor role and counts against an AI limit (12 per 10 minutes).

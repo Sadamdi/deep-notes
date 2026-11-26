@@ -4,7 +4,7 @@ import type { Db } from "../src/db/index.js";
 import { validateCitations, NOT_FOUND_TEXT, type Retrieved } from "../src/modules/answers/answers.service.js";
 import { chunkPages } from "../src/modules/sources/extract.js";
 import { assertPublicUrl, htmlToText, isPrivateAddress } from "../src/modules/sources/extract.js";
-import { fakeAi, closeApp, createNotebookWithSources, freshApp, signUp } from "./helpers.js";
+import { fakeAi, closeApp, createNotebookWithSources, freshApp, OSI_TEXT, signUp, STAR_TEXT, SUBNET_TEXT } from "./helpers.js";
 
 let app: Awaited<ReturnType<typeof freshApp>>["app"];
 let db: Db;
@@ -127,6 +127,49 @@ describe("workspace AI assistance", () => {
     expect(response.body.data.citations.length).toBeGreaterThan(0);
   });
 
+  it("suggests questions from selected source passages without a typed context", async () => {
+    const user = await signUp(app, "Source suggester");
+    const notebookId = await createNotebookWithSources(user.agent);
+    const sources = (await user.agent.get(`/api/v1/notebooks/${notebookId}/sources`)).body.data;
+    const sourceId = sources.find((source: { title: string }) => source.title === "Jaringan 1").id as string;
+    const embed = vi.spyOn(fakeAi, "embed");
+    embed.mockClear();
+    const generate = vi.spyOn(fakeAi, "generateJson").mockImplementationOnce(async (options) => {
+      expect(options.user).toContain(STAR_TEXT);
+      expect(options.user).not.toContain(OSI_TEXT);
+      expect(options.user).not.toContain(SUBNET_TEXT);
+      return options.schema.parse({
+        grounded: true,
+        text: "Pilih pertanyaan dari materi jaringan.",
+        items: [{ question: "Apa fungsi switch pusat?", n: 1 }],
+        citations: [],
+      });
+    });
+
+    const response = await user.agent.post(`/api/v1/notebooks/${notebookId}/ai/assist`).send({
+      task: "suggest_questions",
+      input: "",
+      sourceIds: [sourceId],
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.grounded).toBe(true);
+    expect(response.body.data.items).toEqual(["Apa fungsi switch pusat?"]);
+    expect(response.body.data.citations).toMatchObject([{ sourceTitle: "Jaringan 1" }]);
+    expect(embed).not.toHaveBeenCalled();
+    generate.mockRestore();
+    embed.mockRestore();
+  });
+
+  it("returns no suggestions when the ready source scope is empty", async () => {
+    const user = await signUp(app, "Empty source suggester");
+    const notebookId = (await user.agent.post("/api/v1/notebooks").send({ title: "Workspace kosong" })).body.data.id;
+    const response = await user.agent.post(`/api/v1/notebooks/${notebookId}/ai/assist`).send({ task: "suggest_questions", input: "" });
+    expect(response.status).toBe(200);
+    expect(response.body.data.grounded).toBe(false);
+    expect(response.body.data.items).toEqual([]);
+  });
+
   it("cites suggested questions from the passage each one names", async () => {
     const user = await signUp(app, "Citation asker");
     const notebookId = await createNotebookWithSources(user.agent);
@@ -157,6 +200,8 @@ describe("workspace AI assistance", () => {
 
     const invalid = await user.agent.post(`/api/v1/notebooks/${notebookId}/ai/assist`).send({ task: "unknown", input: "?" });
     expect(invalid.status).toBe(400);
+    const emptySummary = await user.agent.post(`/api/v1/notebooks/${notebookId}/ai/assist`).send({ task: "summarize", input: "" });
+    expect(emptySummary.status).toBe(400);
 
     const outsider = await signUp(app, "Assist outsider");
     const forbidden = await outsider.agent.post(`/api/v1/notebooks/${notebookId}/ai/assist`).send({ task: "summarize", input: "Ringkas topologi bintang." });
@@ -171,6 +216,14 @@ describe("workspace AI assistance", () => {
     });
     expect(isolated.body.data.grounded).toBe(false);
     expect(isolated.body.data.citations).toEqual([]);
+
+    const isolatedSuggestions = await user.agent.post(`/api/v1/notebooks/${notebookId}/ai/assist`).send({
+      task: "suggest_questions",
+      input: "",
+      sourceIds: [otherSource],
+    });
+    expect(isolatedSuggestions.body.data.grounded).toBe(false);
+    expect(isolatedSuggestions.body.data.citations).toEqual([]);
   });
 });
 

@@ -10,6 +10,12 @@ export interface ExtractedPage {
   text: string;
 }
 
+export interface ExtractedTable {
+  name: string;
+  headers: string[];
+  rows: string[][];
+}
+
 export const MAX_FILE_BYTES = 15 * 1024 * 1024;
 
 const clean = (s: string) => s.split("\u0000").join("").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
@@ -108,7 +114,21 @@ export function extractCsv(buf: Buffer): ExtractedPage[] {
   return text ? [{ page: null, text }] : [];
 }
 
-export async function extractXlsx(buf: Buffer): Promise<ExtractedPage[]> {
+function toTable(name: string, rows: string[][]): ExtractedTable | null {
+  if (!rows.length) return null;
+  const headers = rows[0]!.slice(0, 60).map((cell, index) => cell.trim() || `Column ${index + 1}`);
+  const body = rows.slice(1).filter((row) => row.some((cell) => cell.trim())).slice(0, 2000).map((row) => row.slice(0, 60));
+  return headers.length ? { name, headers, rows: body } : null;
+}
+
+export function extractCsvContent(buf: Buffer): { pages: ExtractedPage[]; tables: ExtractedTable[] } {
+  const rows = parseCsv(buf.toString("utf8").replace(/^\uFEFF/, ""));
+  const text = rowsToText(rows);
+  const table = toTable("CSV", rows);
+  return { pages: text ? [{ page: null, text }] : [], tables: table ? [table] : [] };
+}
+
+export async function extractXlsxContent(buf: Buffer): Promise<{ pages: ExtractedPage[]; tables: ExtractedTable[] }> {
   const zip = await JSZip.loadAsync(buf);
   const shared = (await zip.file("xl/sharedStrings.xml")?.async("string")) ?? "";
   const strings = [...shared.matchAll(/<si>([\s\S]*?)<\/si>/g)].map((m) => decodeXml([...m[1]!.matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map((t) => t[1]).join("")));
@@ -120,6 +140,7 @@ export async function extractXlsx(buf: Buffer): Promise<ExtractedPage[]> {
   if (!sheets.length) throw new AppError("VALIDATION", "Not a valid XLSX file");
   const colIndex = (ref: string) => [...ref.replace(/\d+/g, "")].reduce((acc, c) => acc * 26 + c.charCodeAt(0) - 64, 0) - 1;
   const pages: ExtractedPage[] = [];
+  const tables: ExtractedTable[] = [];
   for (const s of sheets) {
     const xml = await zip.file(s.name)!.async("string");
     const rows: string[][] = [];
@@ -138,8 +159,14 @@ export async function extractXlsx(buf: Buffer): Promise<ExtractedPage[]> {
     }
     const text = rowsToText(rows);
     if (text) pages.push({ page: s.n, text });
+    const table = toTable(`Sheet ${s.n}`, rows);
+    if (table) tables.push(table);
   }
-  return pages;
+  return { pages, tables };
+}
+
+export async function extractXlsx(buf: Buffer): Promise<ExtractedPage[]> {
+  return (await extractXlsxContent(buf)).pages;
 }
 
 // ---- links with SSRF protection -------------------------------------------------------------------
@@ -230,10 +257,11 @@ export interface Chunk {
 export function chunkPages(pages: ExtractedPage[], target = 900): Chunk[] {
   const chunks: Chunk[] = [];
   for (const p of pages) {
+    const firstChunkOnPage = chunks.length;
     const units = p.text.split(/\n{2,}|(?<=[.!?])\s+(?=[A-Z0-9])/).map((u) => u.trim()).filter(Boolean);
     let buf = "";
     const flush = () => {
-      if (buf.trim().length >= 20 || (buf.trim() && chunks.length === 0)) chunks.push({ page: p.page, content: buf.trim() });
+      if (buf.trim().length >= 20 || (buf.trim() && chunks.length === firstChunkOnPage)) chunks.push({ page: p.page, content: buf.trim() });
       buf = "";
     };
     for (const u of units) {

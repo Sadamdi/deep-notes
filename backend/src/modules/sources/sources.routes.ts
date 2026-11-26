@@ -1,5 +1,5 @@
 import path from "node:path";
-import { addLinkSourceSchema, addTextSourceSchema } from "@deep-notes/shared";
+import { addLinkSourceSchema, addTextSourceSchema, sourceTranscriptSchema } from "@deep-notes/shared";
 import { Router, type Request } from "express";
 import multer from "multer";
 import { getDb } from "../../db/index.js";
@@ -11,9 +11,9 @@ import { notebookAccess, requireAuth } from "../../middleware/auth.js";
 import { validate } from "../../middleware/validate.js";
 import {
   MAX_FILE_BYTES,
-  extractCsv,
+  extractCsvContent,
   extractDocx,
-  extractXlsx,
+  extractXlsxContent,
   extractPdf,
   extractPlain,
   extractPptx,
@@ -32,7 +32,7 @@ export const MAX_SOURCES_PER_NOTEBOOK = 40;
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: MAX_FILE_BYTES, files: 1 } });
 
-const KIND_BY_EXT: Record<string, "pdf" | "text" | "docx" | "pptx" | "xlsx" | "csv" | "image"> = {
+const KIND_BY_EXT: Record<string, "pdf" | "text" | "docx" | "pptx" | "xlsx" | "csv" | "image" | "audio"> = {
   ".pdf": "pdf",
   ".txt": "text",
   ".md": "text",
@@ -45,11 +45,30 @@ const KIND_BY_EXT: Record<string, "pdf" | "text" | "docx" | "pptx" | "xlsx" | "c
   ".jpg": "image",
   ".jpeg": "image",
   ".webp": "image",
+  ".mp3": "audio",
+  ".m4a": "audio",
+  ".mp4": "audio",
+  ".wav": "audio",
+  ".aac": "audio",
+  ".ogg": "audio",
+  ".webm": "audio",
 };
 
 const IMAGE_MIME: Record<string, string> = { ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp" };
+const AUDIO_MIME: Record<string, string> = {
+  ".mp3": "audio/mpeg", ".m4a": "audio/mp4", ".mp4": "audio/mp4", ".wav": "audio/wav",
+  ".aac": "audio/aac", ".ogg": "audio/ogg", ".webm": "audio/webm",
+};
 
 const startsWith = (buf: Buffer, sig: string) => buf.subarray(0, sig.length).toString("latin1") === sig;
+const isAudioFile = (buf: Buffer, ext: string) => {
+  if (ext === ".wav") return startsWith(buf, "RIFF") && buf.subarray(8, 12).toString("ascii") === "WAVE";
+  if (ext === ".ogg") return startsWith(buf, "OggS");
+  if (ext === ".webm") return buf.subarray(0, 4).equals(Buffer.from([0x1a, 0x45, 0xdf, 0xa3]));
+  if (ext === ".mp4" || ext === ".m4a") return buf.subarray(4, 8).toString("ascii") === "ftyp";
+  if (ext === ".mp3") return startsWith(buf, "ID3") || (buf.length > 1 && buf[0] === 0xff && (buf[1]! & 0xe0) === 0xe0);
+  return startsWith(buf, "ADIF") || (buf.length > 1 && buf[0] === 0xff && (buf[1]! & 0xf6) === 0xf0);
+};
 
 async function createSource(req: Request, title: string, kind: string, origin: string | null, pages: PagesInput) {
   const db = await getDb();
@@ -75,25 +94,44 @@ sourceRoutes.post(
     if (!f) throw new AppError("VALIDATION", "Attach a file in the 'file' field");
     const ext = path.extname(f.originalname).toLowerCase();
     const kind = KIND_BY_EXT[ext];
-    if (!kind) throw new AppError("VALIDATION", "Supported files: PDF, TXT, MD, DOCX, PPTX, XLSX, CSV, PNG, JPG, WEBP");
+    if (!kind) throw new AppError("VALIDATION", "Supported files: PDF, TXT, MD, DOCX, PPTX, XLSX, CSV, PNG, JPG, WEBP, MP3, M4A, MP4, WAV, AAC, OGG, WEBM");
     if (kind === "pdf" && !startsWith(f.buffer, "%PDF")) throw new AppError("VALIDATION", "The file is not a real PDF");
     if (kind === "image" && !(startsWith(f.buffer, "\x89PNG") || startsWith(f.buffer, "\xFF\xD8") || startsWith(f.buffer, "RIFF"))) throw new AppError("VALIDATION", "The file is not a real image");
+    if (kind === "audio" && !isAudioFile(f.buffer, ext)) throw new AppError("VALIDATION", "The file does not match a supported audio format");
     if ((kind === "docx" || kind === "pptx" || kind === "xlsx") && !startsWith(f.buffer, "PK")) throw new AppError("VALIDATION", `The file is not a real ${ext.slice(1).toUpperCase()}`);
-    let pages: ExtractedPage[];
+    let pages: ExtractedPage[] = [];
+    let input: PagesInput;
     try {
-      pages = kind === "image" ? [] : kind === "csv" ? extractCsv(f.buffer) : kind === "xlsx" ? await extractXlsx(f.buffer) : kind === "pdf" ? await extractPdf(f.buffer) : kind === "docx" ? await extractDocx(f.buffer) : kind === "pptx" ? await extractPptx(f.buffer) : extractPlain(f.buffer);
+      if (kind === "audio") {
+        const data = f.buffer;
+        const mime = AUDIO_MIME[ext]!;
+        input = async () => {
+          const transcript = await getAi().transcribe(data, mime);
+          if (!transcript.length) throw new Error("No speech was detected in this audio");
+          const text = transcript.map((segment) => `[${segment.startSec.toFixed(2)}–${segment.endSec.toFixed(2)}s] ${segment.text}`).join("\n");
+          return { pages: [{ page: null, text }], transcript };
+        };
+      } else if (kind === "csv") {
+        input = extractCsvContent(f.buffer);
+      } else if (kind === "xlsx") {
+        input = await extractXlsxContent(f.buffer);
+      } else {
+        pages = kind === "image" ? [] : kind === "pdf" ? await extractPdf(f.buffer) : kind === "docx" ? await extractDocx(f.buffer) : kind === "pptx" ? await extractPptx(f.buffer) : extractPlain(f.buffer);
+        input = pages;
+      }
     } catch (e) {
       if (e instanceof AppError) throw e;
       throw new AppError("VALIDATION", "The file could not be read");
     }
-    let input: PagesInput = pages;
-    if (!pages.length) {
+    if (kind !== "audio" && !pages.length && (kind === "pdf" || kind === "image")) {
       // a PDF without a text layer is a scan: read it with a vision model in the background
-      if ((kind !== "pdf" && kind !== "image") || env.GEMINI_API_KEYS.length === 0) throw new AppError("VALIDATION", "No readable text found in this file");
+      if (env.GEMINI_API_KEYS.length === 0) throw new AppError("VALIDATION", "Scanned documents need GEMINI_API_KEYS");
       if (f.size > 12 * 1024 * 1024) throw new AppError("VALIDATION", "Scanned PDFs are limited to 12 MB");
       const data = f.buffer;
       const mime = kind === "image" ? IMAGE_MIME[ext]! : "application/pdf";
       input = async () => (await getAi().ocr(data, mime)).map((p) => ({ page: kind === "image" ? null : p.page, text: p.text }));
+    } else if (kind !== "audio" && !pages.length && kind !== "csv" && kind !== "xlsx") {
+      throw new AppError("VALIDATION", "No readable text found in this file");
     }
     const title = typeof req.body?.title === "string" && req.body.title.trim() ? req.body.title.trim().slice(0, 160) : path.basename(f.originalname, ext);
     res.status(202).json(ok(await createSource(req, title, kind, null, input)));
@@ -164,6 +202,21 @@ sourceRoutes.get(
     );
     if (!rows.length) throw new AppError("NOT_FOUND", "Page not found");
     res.json(ok({ page, text: rows.map((r) => r.content).join("\n\n") }));
+  }),
+);
+
+sourceRoutes.get(
+  "/:sourceId/transcript",
+  notebookAccess("viewer"),
+  asyncHandler(async (req, res) => {
+    const db = await getDb();
+    const source = await db.query<{ id: string; kind: string; status: string }>("SELECT id, kind, status FROM sources WHERE notebook_id = $1 AND id::text = $2", [req.member!.notebookId, req.params.sourceId]);
+    if (!source[0]) throw new AppError("NOT_FOUND", "Source not found");
+    if (source[0].kind !== "audio") throw new AppError("VALIDATION", "Transcripts are available only for audio sources");
+    if (source[0].status !== "ready") throw new AppError("CONFLICT", "The audio source is not ready yet");
+    const rows = await db.query<{ segments: unknown }>("SELECT segments FROM source_transcripts WHERE source_id = $1", [source[0].id]);
+    const result = sourceTranscriptSchema.parse({ sourceId: source[0].id, segments: rows[0]?.segments ?? [] });
+    res.json(ok(result));
   }),
 );
 

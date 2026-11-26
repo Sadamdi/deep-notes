@@ -14,6 +14,15 @@ PostgreSQL 16 with the `pgvector` extension. Schema lives in `backend/src/db/sch
 - Plain Drizzle queries for normal access. Raw SQL is allowed only for vector search, and it must keep the notebook filter inside
   the query.
 
+## Ownership for user content
+
+- Workspace notes are private rows keyed by both notebook and author. A source/page reference is optional; the API verifies that the source belongs to the same notebook.
+- Discussion messages belong to a notebook and an author, so only notebook members may read or send them.
+- Writer drafts and saved-post relations belong to one account. Never list them without filtering by the current session user.
+- Friend requests and accepted friendships belong to the two users; deleting either account cascades the relationship. Responses expose names and courses, never email addresses.
+- Source transcripts and extracted spreadsheet rows are keyed by source and cascade on deletion. The uploaded audio itself is not stored; only timestamped transcript segments are retained for citation and display.
+- User-owned rows cascade when the user is deleted. Notebook content cascades with its notebook, and deleted source references are set to `NULL`.
+
 ## Migrations
 
 ```bash

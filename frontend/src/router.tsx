@@ -17,6 +17,7 @@ const JoinWorkspacePage = lazy(() => import("@/pages/JoinWorkspacePage").then((m
 const FeedPage = lazy(() => import("@/pages/FeedPage").then((module) => ({ default: module.FeedPage })));
 const DiscoverPage = lazy(() => import("@/pages/DiscoverPage").then((module) => ({ default: module.DiscoverPage })));
 const ProfilePage = lazy(() => import("@/pages/ProfilePage").then((module) => ({ default: module.ProfilePage })));
+const FriendsPage = lazy(() => import("@/pages/FriendsPage").then((module) => ({ default: module.FriendsPage })));
 const AccountSettingsPage = lazy(() => import("@/pages/AccountSettingsPage").then((module) => ({ default: module.AccountSettingsPage })));
 const PublicProfilePage = lazy(() => import("@/pages/PublicProfilePage").then((module) => ({ default: module.PublicProfilePage })));
 const CompanionPage = lazy(() => import("@/pages/CompanionPage").then((module) => ({ default: module.CompanionPage })));
@@ -49,6 +50,7 @@ export const router = createBrowserRouter([
       { path: "/workspaces", element: screen(WorkspacesPage) },
       { path: "/discover", element: screen(DiscoverPage) },
       { path: "/profile", element: screen(ProfilePage) },
+      { path: "/friends", element: screen(FriendsPage) },
       { path: "/account", element: screen(AccountSettingsPage) },
       { path: "/users/:userId", element: screen(PublicProfilePage) },
       { path: "/studio", element: screen(StudioPage) },
@@ -65,9 +67,12 @@ export const router = createBrowserRouter([
       { path: "/workspaces/:notebookId/class", element: screen(WorkspaceClassPage) },
       { path: "/workspaces/:notebookId/visualization", element: screen(WorkspaceVisualizationPage) },
       { path: "/workspaces/:notebookId/sources/:sourceId/map", element: screen(MindMapPage) },
-      { path: "/workspaces/:notebookId/sessions/:sessionId", element: screen(GameSessionPage) },
-      { path: "/workspaces/:notebookId/game", element: screen(WorkspaceGamePage) },
-      { path: "/workspaces/:notebookId/quizzes/:quizId", element: screen(QuizPage) },
+      { path: "/game/:notebookId/sessions/:sessionId", element: screen(GameSessionPage) },
+      { path: "/game/:notebookId/quizzes/:quizId", element: screen(QuizPage) },
+      { path: "/game/:notebookId", element: screen(WorkspaceGamePage) },
+      { path: "/workspaces/:notebookId/sessions/:sessionId", loader: ({ params }) => redirect(`/game/${params.notebookId}/sessions/${params.sessionId}`) },
+      { path: "/workspaces/:notebookId/game", loader: ({ params, request }) => { const search = new URL(request.url).search; return redirect(`/game/${params.notebookId}${search}`); } },
+      { path: "/workspaces/:notebookId/quizzes/:quizId", loader: ({ params }) => redirect(`/game/${params.notebookId}/quizzes/${params.quizId}`) },
       { path: "/notebooks/:notebookId", loader: ({ params }) => redirect(`/workspaces/${params.notebookId}`) },
       { path: "/game", element: screen(GamePage) },
       { path: "/join/:token", element: screen(JoinWorkspacePage) },

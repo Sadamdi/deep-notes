@@ -11,7 +11,7 @@ import { ErrorState } from "@/components/shared/PageStates";
 import { sourceKey } from "@/features/notebooks/queries";
 import { ApiRequestError, api, jsonBody } from "@/lib/api";
 
-const acceptedFiles = ".pdf,.txt,.md,.docx,.pptx,.xlsx,.csv,.png,.jpg,.jpeg,.webp";
+const acceptedFiles = ".pdf,.txt,.md,.docx,.pptx,.xlsx,.csv,.png,.jpg,.jpeg,.webp,.mp3,.m4a,.mp4,.wav,.aac,.ogg,.webm";
 
 // the hosted API gateway rejects request bodies above about 4.5 MB, below the 15 MB the server itself accepts
 const MAX_FILE_MB = 4;
@@ -109,7 +109,7 @@ export function SourceUploader({ notebookId, canUpload }: { notebookId: string; 
           <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white text-primary"><Upload aria-hidden="true" className="size-5" /></span>
           <div className="min-w-0 flex-1">
             <h2 className="font-bold text-navy" id="source-upload-title">Kumpulkan bahan kuliah</h2>
-            <p className="mt-1 text-xs leading-5 text-muted-foreground">PDF, slide, spreadsheet, gambar, catatan, dan tautan halaman · maksimal {MAX_FILE_MB} MB per file.</p>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">PDF, slide, spreadsheet, gambar, audio, catatan, dan tautan halaman · maksimal {MAX_FILE_MB} MB per file.</p>
           </div>
         </div>
         <div className="mt-4 flex flex-wrap gap-2">

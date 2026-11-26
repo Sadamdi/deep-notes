@@ -31,7 +31,7 @@ companionPublicRoutes.get("/catalog", (_req, res) => {
       /** clips the interface can trigger by itself for study events, without asking the AI */
       reactions: REACTION_FOR_EVENT,
       sourceKinds: sourceKindSchema.options,
-      upload: { maxFileMb: 15, extensions: [".pdf", ".txt", ".md", ".docx", ".pptx", ".xlsx", ".csv", ".png", ".jpg", ".jpeg", ".webp"], plannedExtensions: [".mp3", ".m4a", ".wav", ".mp4"] },
+      upload: { maxFileMb: 15, extensions: [".pdf", ".txt", ".md", ".docx", ".pptx", ".xlsx", ".csv", ".png", ".jpg", ".jpeg", ".webp", ".mp3", ".m4a", ".mp4", ".wav", ".aac", ".ogg", ".webm"], plannedExtensions: [] },
     }),
   );
 });

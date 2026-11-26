@@ -38,3 +38,19 @@ Resolve workspace verification executables from the package that owns them; Vite
 ## [ai] Model asli bisa mengosongkan citations untuk tugas yang menghasilkan daftar; min
 Model asli bisa mengosongkan citations untuk tugas yang menghasilkan daftar; minta nomor sumber per item. Periksa balasan mentah model sebelum menyimpulkan akar bug, fake AI di tes tidak meniru perilaku ini.
 (dicatat 2026-11-26)
+
+## [frontend] Retry-safe local data import should preserve the browser copy and reuse stable I
+Retry-safe local data import should preserve the browser copy and reuse stable IDs so a partial failure can be retried without duplicates. Check the deployed OpenAPI document before treating a local API route as available on the shared server.
+(dicatat 2026-11-26)
+
+## [ai] Automatic source suggestions have no search phrase, so sample passages directly
+Automatic source suggestions have no search phrase, so sample passages directly from ready sources inside the authorized notebook scope and require each suggested question to cite one of those passages. A generic search phrase can silently bias suggestions toward unrelated material.
+(dicatat 2026-11-26)
+
+## [tooling] Use the explicit package script form pnpm run ci; the bare pnpm ci alias may run
+Use the explicit package script form pnpm run ci; the bare pnpm ci alias may run package installation instead of the repository CI script.
+(dicatat 2026-11-26)
+
+## [game] Mark a round complete as soon as the answer API accepts it
+Mark a round complete as soon as the answer API accepts it. A later session poll can still return stale progress while the player can already continue.
+(dicatat 2026-11-27)

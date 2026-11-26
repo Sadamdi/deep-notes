@@ -29,10 +29,25 @@ export function QuizLauncher({ notebookId, sources }: { notebookId: string; sour
   const readySources = sources.filter((source) => source.status === "ready");
   const scope = useSourceScope(notebookId, sources);
   const sourceScopeEmpty = scope.sourceIds !== null && scope.selectedSourceIds.length === 0;
+  const activeSources = readySources.filter((source) => scope.selectedSourceIds.includes(source.id));
+  const topicHint = readySources.length === 0
+    ? "Tambahkan sumber dan tunggu sampai siap dibaca."
+    : sourceScopeEmpty
+      ? "Pilih setidaknya satu sumber siap sebagai acuan kuis."
+      : topic.trim()
+        ? `Topik ini akan dicari di ${activeSources.length} sumber terpilih.`
+        : `Kosongkan untuk membuat soal dari seluruh materi di ${activeSources.length} sumber terpilih.`;
+  const topicPlaceholder = readySources.length === 0
+    ? "Tambahkan sumber siap terlebih dahulu"
+    : sourceScopeEmpty
+      ? "Pilih sumber siap terlebih dahulu"
+      : activeSources.length === 1
+        ? `Topik dari ${activeSources[0]!.title}`
+        : "Contoh topik dari sumber terpilih";
   const createQuiz = useMutation({
     mutationFn: (body: GenerateQuizInput) =>
       api<QuizCreated>(`/notebooks/${notebookId}/quizzes`, jsonBody("POST", body)),
-    onSuccess: (quiz) => navigate(`/workspaces/${notebookId}/quizzes/${quiz.id}`),
+    onSuccess: (quiz) => navigate(`/game/${notebookId}/quizzes/${quiz.id}`),
   });
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -74,11 +89,13 @@ export function QuizLauncher({ notebookId, sources }: { notebookId: string; sour
         </div>
       </div>
 
-      <form className="grid gap-4 rounded-3xl border bg-card p-5 sm:grid-cols-2 xl:grid-cols-[1.3fr_1fr_140px_auto] xl:items-end sm:p-6" onSubmit={submit}>
+      <form className="space-y-4 rounded-3xl border bg-card p-5 sm:p-6" onSubmit={submit}>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(130px,.65fr)] xl:items-start">
         <div className="space-y-2"><Label htmlFor="quiz-kind">Jenis latihan</Label><select className="h-10 w-full rounded-xl border bg-background px-3 text-sm" id="quiz-kind" onChange={(event) => { setKind(event.target.value as QuizKind); setValidationError(""); }} value={kind}><option value="practice">Latihan bebas</option><option value="weekly">Kuis mingguan</option><option value="exam">Ujian bertimer</option></select></div>
         <div className="space-y-2">
           <Label htmlFor="quiz-topic">Topik (opsional)</Label>
-          <Input id="quiz-topic" maxLength={120} onChange={(event) => setTopic(event.target.value)} placeholder="Misalnya: topologi bintang" value={topic} />
+          <Input aria-describedby="quiz-topic-hint" id="quiz-topic" maxLength={120} onChange={(event) => setTopic(event.target.value)} placeholder={topicPlaceholder} value={topic} />
+          <p className="text-xs leading-5 text-muted-foreground" id="quiz-topic-hint">{topicHint}</p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="quiz-count">Jumlah soal</Label>
@@ -86,14 +103,17 @@ export function QuizLauncher({ notebookId, sources }: { notebookId: string; sour
         </div>
         {kind === "weekly" && <div className="space-y-2"><Label htmlFor="quiz-due">Batas pengerjaan</Label><Input id="quiz-due" min={localDateTimeMin()} onChange={(event) => setDueAt(event.target.value)} required type="datetime-local" value={dueAt}/></div>}
         {kind === "exam" && <div className="space-y-2"><Label htmlFor="quiz-time-limit">Durasi ujian (menit)</Label><Input id="quiz-time-limit" max={120} min={1} onChange={(event) => setTimeLimitMinutes(event.target.value)} required type="number" value={timeLimitMinutes}/></div>}
-        <div className="sm:col-span-2 xl:col-span-4"><SourceScopePicker onChange={scope.setSourceIds} sourceIds={scope.sourceIds} sources={sources}/></div>
-        <Button disabled={createQuiz.isPending || readySources.length === 0 || sourceScopeEmpty} type="submit">
+        </div>
+        <SourceScopePicker onChange={scope.setSourceIds} sourceIds={scope.sourceIds} sources={sources}/>
+        <div className="grid gap-3 md:grid-cols-[minmax(0,260px)_minmax(0,1fr)] md:items-center">
+        <Button className="w-full" disabled={createQuiz.isPending || readySources.length === 0 || sourceScopeEmpty} type="submit">
           {createQuiz.isPending ? <LoaderCircle aria-hidden="true" className="animate-spin" /> : <Brain aria-hidden="true" />}
           {createQuiz.isPending ? "Menyiapkan…" : "Mulai latihan"}<ArrowRight aria-hidden="true" />
         </Button>
-        <p className="text-xs leading-5 text-muted-foreground sm:col-span-3">{scope.selectedSourceIds.length} sumber dari acuan terpilih siap digunakan. Kuis memerlukan setidaknya tiga bagian materi yang dapat dibaca.</p>
-        {validationError && <p className="text-sm text-destructive sm:col-span-3" role="alert">{validationError}</p>}
-        {createQuiz.isError && <div className="sm:col-span-3"><ErrorState message={createQuiz.error instanceof ApiRequestError ? createQuiz.error.message : "Kuis belum berhasil dibuat."} /></div>}
+        <p className="text-xs leading-5 text-muted-foreground">{scope.selectedSourceIds.length} sumber dari acuan terpilih siap digunakan. Kuis memerlukan setidaknya tiga bagian materi yang dapat dibaca.</p>
+        </div>
+        {validationError && <p className="text-sm text-destructive" role="alert">{validationError}</p>}
+        {createQuiz.isError && <ErrorState message={createQuiz.error instanceof ApiRequestError ? createQuiz.error.message : "Kuis belum berhasil dibuat."} />}
       </form>
     </section>
   );

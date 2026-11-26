@@ -5,6 +5,11 @@ Every task gets an entry: a `Plan` before code, `Released` after it is merged an
 
 | Version | Date | Type | Title | Status | File |
 |---|---|---|---|---|---|
+| v0.0.15 | 2026-11-27 | Feature | Game separation, streak, and source APIs | In Progress | [v20261127-game-api-refresh.md](v20261127-game-api-refresh.md) |
+| v0.0.14 | 2026-11-27 | Fix | Keep game rounds moving forward | In Progress | [v20261126-round-progression.md](v20261126-round-progression.md) |
+| v0.0.13 | 2026-11-26 | Feature / UI | Friends and interactive game refresh | In Progress | [v20261126-social-game-refresh.md](v20261126-social-game-refresh.md) |
+| v0.0.12 | 2026-11-26 | Feature | Source-aware question suggestions | In Progress | [v20261126-source-aware-ask.md](v20261126-source-aware-ask.md) |
+| v0.0.11 | 2026-11-26 | Feature | Server-backed frontend inputs | In Progress | [v20261126-server-backed-inputs.md](v20261126-server-backed-inputs.md) |
 | v0.0.10 | 2026-11-26 | Fix | Gateway timeout, upload limit, classroom and concept map visuals | In Progress | [v20261126-timeout-and-visuals.md](v20261126-timeout-and-visuals.md) |
 | v0.0.9 | 2026-11-26 | Fix | Fixes found in local browser testing | In Progress | [v20261126-fixes-after-qa.md](v20261126-fixes-after-qa.md) |
 | v0.0.8 | 2026-11-26 | Config | Frontend deployment on Vercel | In Progress | [v20261126-frontend-vercel-deploy.md](v20261126-frontend-vercel-deploy.md) |

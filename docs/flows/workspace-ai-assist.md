@@ -32,4 +32,4 @@ sequenceDiagram
   end
 ```
 
-Notes, discussion messages, and Studio drafts remain browser-local. A user can explicitly submit a note through `POST /notebooks/:id/sources/text`; source-role checks and normal ingestion then apply.
+Notes, discussion messages, and Studio drafts persist through their authenticated APIs. A user can still explicitly submit a note through `POST /notebooks/:id/sources/text`; source-role checks and normal ingestion then apply.

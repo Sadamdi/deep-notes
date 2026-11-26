@@ -11,14 +11,18 @@ import { healthRoutes } from "./modules/health/health.routes.js";
 import { inviteRoutes, notebookRoutes, publicRoutes } from "./modules/notebooks/notebooks.routes.js";
 import { quizRoutes } from "./modules/quizzes/quizzes.routes.js";
 import { sourceRoutes } from "./modules/sources/sources.routes.js";
+import { notificationRoutes } from "./modules/notifications/notifications.routes.js";
+import { publicationRoutes } from "./modules/publications/publications.routes.js";
 
 /** Mount every feature module here. The /api/v1 prefix is applied in app.ts. */
 export const apiRouter = Router();
 apiRouter.use("/health", healthRoutes);
 apiRouter.use("/auth", authRoutes);
 apiRouter.use("/me/stats", statsRoutes);
+apiRouter.use("/me/notifications", notificationRoutes);
 apiRouter.use("/me", accountRoutes);
 apiRouter.use("/me", profileRoutes);
+apiRouter.use(publicationRoutes);
 apiRouter.use("/invites", inviteRoutes);
 apiRouter.use("/public", publicRoutes);
 apiRouter.use("/notebooks/:id/sources", sourceRoutes);

@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Db } from "../src/db/index.js";
 import { gradeItem } from "../src/modules/play/items.js";
 import { chooseTypes } from "../src/modules/play/planner.js";
-import { closeApp, createNotebookWithSources, freshApp, signUp, STAR_TEXT } from "./helpers.js";
+import { closeApp, createNotebookWithSources, freshApp, signUp, OSI_TEXT, STAR_TEXT, SUBNET_TEXT } from "./helpers.js";
 
 type GradeArg = Parameters<typeof gradeItem>[0];
 let app: Awaited<ReturnType<typeof freshApp>>["app"];
@@ -24,7 +24,10 @@ function perfect(round: Plan[number]): unknown[] {
       case "tf": return it.answer;
       case "order": return it.answerOrder;
       case "match": return it.answerRights;
-      case "teach": return STAR_TEXT;
+      case "teach": {
+        const sourceTitle = (it.ref as { sourceTitle: string }).sourceTitle;
+        return sourceTitle === "Jaringan 2" ? OSI_TEXT : sourceTitle === "Jaringan 3" ? SUBNET_TEXT : STAR_TEXT;
+      }
       default: return it.answerIndex;
     }
   });
@@ -99,7 +102,7 @@ describe("playing a session: grading, points, streak, badges", () => {
     for (const [i, round] of plan.entries()) {
       const r = await u.agent.post(`/api/v1/notebooks/${nb}/sessions/${s.id}/rounds/${i}/answer`).send({ answers: perfect(round), elapsedMs: 10_000 });
       expect(r.status, round.type).toBe(201);
-      expect(r.body.data.correctCount, round.type).toBe(round.items.length);
+      expect(r.body.data.correctCount, `${round.type}: ${JSON.stringify(r.body.data.results)}`).toBe(round.items.length);
       expect(r.body.data.reaction).toEqual({ animation: "celebrate", emotion: "semangat" });
       expect(r.body.data.results[0]).toHaveProperty("explanation");
       total += r.body.data.points;
@@ -173,8 +176,10 @@ describe("duel and group sessions", () => {
     for (const m of [b, c]) await a.agent.post(`/api/v1/notebooks/${nb}/members`).send({ email: m.email });
     const s = (await a.agent.post(`/api/v1/notebooks/${nb}/sessions`).send({ mode: "duel", rounds: 3 })).body.data;
     expect(s.status).toBe("waiting");
+    expect(s.hostId).toBe(a.id);
     expect(s.rounds).toEqual([]);
     const base = `/api/v1/notebooks/${nb}/sessions/${s.id}`;
+    expect((await a.agent.post(`${base}/start`)).status).toBe(409); // host alone cannot start
     expect((await b.agent.post(`${base}/rounds/0/answer`).send({ answers: [1] })).status).toBe(409); // not running
     expect((await b.agent.post(`${base}/join`)).status).toBe(200);
     expect((await c.agent.post(`${base}/join`)).status).toBe(409); // duel holds two players
@@ -195,6 +200,27 @@ describe("duel and group sessions", () => {
     expect(fin).toMatchObject({ rank: 2, players: 2 });
     expect((await b.agent.get(base)).body.data.status).toBe("finished");
     expect((await a.agent.get("/api/v1/me/stats")).body.data.badges.map((x: { id: string }) => x.id)).toContain("teammate");
+  });
+
+  it("starts a group only after another member joins and caps it at twelve players", async () => {
+    const host = await signUp(app, "GroupHost");
+    const players = await Promise.all(Array.from({ length: 12 }, (_, i) => signUp(app, `GroupPlayer${i + 1}`)));
+    const nb = await createNotebookWithSources(host.agent);
+    for (const player of players) {
+      const added = await host.agent.post(`/api/v1/notebooks/${nb}/members`).send({ email: player.email, role: "viewer" });
+      expect(added.status).toBe(201);
+    }
+    const session = (await host.agent.post(`/api/v1/notebooks/${nb}/sessions`).send({ mode: "group", rounds: 3 })).body.data;
+    expect(session).toMatchObject({ status: "waiting", hostId: host.id, participants: [{ userId: host.id }] });
+    const base = `/api/v1/notebooks/${nb}/sessions/${session.id}`;
+    expect((await host.agent.post(`${base}/start`)).status).toBe(409);
+
+    for (const player of players.slice(0, 11)) expect((await player.agent.post(`${base}/join`)).status).toBe(200);
+    expect((await players[11]!.agent.post(`${base}/join`)).status).toBe(409);
+    expect((await players[0]!.agent.post(`${base}/start`)).status).toBe(403);
+    const started = await host.agent.post(`${base}/start`);
+    expect(started.status).toBe(200);
+    expect(started.body.data).toMatchObject({ status: "running", hostId: host.id, participants: expect.arrayContaining([{ userId: players[0]!.id, name: players[0]!.name, score: 0, finished: false, roundsAnswered: 0 }]) });
   });
 
   it("does not let outsiders touch sessions of another group", async () => {

@@ -30,6 +30,9 @@ export const fakeAi: AiProvider = {
   async ocr() {
     return [{ page: 1, text: "Hasil pembacaan halaman pindaian tentang topologi bintang dan switch pusat pada jaringan kampus." }];
   },
+  async transcribe() {
+    return [{ startSec: 0, endSec: 2.5, text: "Pembicara menjelaskan algoritma pencarian biner." }];
+  },
   async embed(texts) {
     return texts.map(fakeEmbedding);
   },
@@ -56,6 +59,14 @@ export const fakeAi: AiProvider = {
     for (const b of blocks) {
       const overlap = tokens(b[3]!).filter((t) => qt.has(t)).length;
       if (overlap > best.overlap) best = { n: Number(b[1]), overlap, text: b[3]! };
+    }
+    if (opts.system.includes("Buat 3 sampai 5 pertanyaan")) {
+      return opts.schema.parse({
+        grounded: blocks.length > 0,
+        text: blocks.length ? "Pilih pertanyaan yang ingin kamu pelajari." : "",
+        items: blocks.slice(0, 5).map((block) => ({ question: `Apa gagasan utama dalam ${block[2]!.split(",")[0]}?`, n: Number(block[1]) })),
+        citations: [],
+      });
     }
     if (best.overlap < 2) {
       return opts.purpose === "explain"

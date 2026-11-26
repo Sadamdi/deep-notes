@@ -1,4 +1,4 @@
-import { createCommentSchema, createPostSchema } from "@deep-notes/shared";
+import { createCommentSchema, createPostSchema, postIdParamsSchema } from "@deep-notes/shared";
 import { Router } from "express";
 import { getDb } from "../../db/index.js";
 import { ok } from "../../lib/apiResponse.js";
@@ -10,7 +10,7 @@ import { validate } from "../../middleware/validate.js";
 
 /** Social feed: posts with an optional attached public workspace or shared session result, likes, comments, follows. */
 export const feedRoutes = Router();
-feedRoutes.use(["/posts", "/feed", "/users"], requireAuth);
+feedRoutes.use(["/posts", "/feed", "/users", "/saved-posts"], requireAuth);
 
 const postLimit = rateLimit({ windowMs: 10 * 60_000, max: 20, key: (req) => `post:${req.user?.id}` });
 const UUID = /^[0-9a-f-]{36}$/i;
@@ -26,6 +26,7 @@ const POST_SQL = `
   SELECT p.id, p.body, p.attach, p.created_at AS "createdAt", p.author_id AS "authorId", u.name AS "authorName", u.course AS "authorCourse",
     (SELECT count(*)::int FROM post_likes l WHERE l.post_id = p.id) AS "likes",
     EXISTS (SELECT 1 FROM post_likes l WHERE l.post_id = p.id AND l.user_id = $1) AS "likedByMe",
+    EXISTS (SELECT 1 FROM saved_posts s WHERE s.post_id = p.id AND s.user_id = $1) AS "savedByMe",
     (SELECT count(*)::int FROM post_comments c WHERE c.post_id = p.id) AS "comments",
     EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = $1 AND f.followee_id = p.author_id) AS "followingAuthor"
   FROM posts p JOIN users u ON u.id = p.author_id`;
@@ -97,6 +98,39 @@ feedRoutes.get(
     )) as Array<{ attach: never; authorId: string; createdAt: Date }>;
     const page = rows.slice(0, limit);
     res.json(ok({ posts: await withCards(page), nextBefore: rows.length > limit ? page[page.length - 1]!.createdAt : null }));
+  }),
+);
+
+feedRoutes.get(
+  "/saved-posts",
+  asyncHandler(async (req, res) => {
+    const rows = (await (await getDb()).query(
+      `${POST_SQL}
+       JOIN saved_posts s ON s.post_id = p.id AND s.user_id = $2
+       ORDER BY s.created_at DESC`,
+      [req.user!.id, req.user!.id],
+    )) as Array<{ attach: never; authorId: string }>;
+    res.json(ok({ posts: await withCards(rows) }));
+  }),
+);
+
+feedRoutes.post(
+  "/posts/:id/save",
+  validate("params", postIdParamsSchema),
+  asyncHandler(async (req, res) => {
+    await assertPostId(String(req.params.id));
+    await (await getDb()).query("INSERT INTO saved_posts(user_id, post_id) VALUES ($1,$2) ON CONFLICT DO NOTHING", [req.user!.id, req.params.id]);
+    res.json(ok({ saved: true }));
+  }),
+);
+
+feedRoutes.delete(
+  "/posts/:id/save",
+  validate("params", postIdParamsSchema),
+  asyncHandler(async (req, res) => {
+    await assertPostId(String(req.params.id));
+    await (await getDb()).query("DELETE FROM saved_posts WHERE user_id = $1 AND post_id = $2", [req.user!.id, req.params.id]);
+    res.json(ok({ saved: false }));
   }),
 );
 
@@ -210,7 +244,13 @@ feedRoutes.get(
          (SELECT count(*)::int FROM follows f WHERE f.followee_id = u.id) AS followers,
          (SELECT count(*)::int FROM follows f WHERE f.follower_id = u.id) AS following,
          (SELECT count(*)::int FROM posts p WHERE p.author_id = u.id) AS posts,
-         EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = $2 AND f.followee_id = u.id) AS "followedByMe"
+         EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = $2 AND f.followee_id = u.id) AS "followedByMe",
+         CASE
+           WHEN EXISTS (SELECT 1 FROM friendships f WHERE f.status = 'accepted' AND LEAST(f.requester_id, f.addressee_id) = LEAST($2::uuid, u.id) AND GREATEST(f.requester_id, f.addressee_id) = GREATEST($2::uuid, u.id)) THEN 'friends'
+           WHEN EXISTS (SELECT 1 FROM friendships f WHERE f.status = 'pending' AND f.requester_id = u.id AND f.addressee_id = $2) THEN 'incoming'
+           WHEN EXISTS (SELECT 1 FROM friendships f WHERE f.status = 'pending' AND f.requester_id = $2 AND f.addressee_id = u.id) THEN 'outgoing'
+           ELSE 'none'
+         END AS "friendshipStatus"
        FROM users u WHERE u.id = $1`,
       [id, req.user!.id],
     );

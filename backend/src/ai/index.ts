@@ -16,6 +16,8 @@ export interface AiProvider {
   embed(texts: string[], task: EmbedTask): Promise<number[][]>;
   /** Reads text from a scanned document (no text layer) with a vision model. */
   ocr(data: Buffer, mimeType: string): Promise<Array<{ page: number; text: string }>>;
+  /** Transcribes audio while preserving segment timestamps for source citations. */
+  transcribe(data: Buffer, mimeType: string): Promise<Array<{ startSec: number; endSec: number; text: string }>>;
 }
 
 const GEMINI = "https://generativelanguage.googleapis.com/v1beta";
@@ -159,6 +161,35 @@ export function createRealAi(): AiProvider {
         }
       }
       throw new Error(`text recognition failed: ${(last as Error)?.message ?? last}`);
+    },
+
+    async transcribe(data, mimeType) {
+      if (env.GEMINI_API_KEYS.length === 0) throw new Error("audio transcription needs GEMINI_API_KEYS");
+      const prompt = 'Transcribe this audio verbatim in its original language. Return ordered speech segments with start and end time in seconds. Do not summarize or add words. Return JSON only: {"segments":[{"startSec":0,"endSec":1,"text":"spoken words"}]}. Omit silence.';
+      const schema = z.object({ segments: z.array(z.object({ startSec: z.number().nonnegative(), endSec: z.number().positive(), text: z.string().trim().min(1) }).refine((segment) => segment.endSec > segment.startSec)).max(2000) });
+      let last: unknown = new Error("no Gemini key available");
+      for (let attempt = 0; attempt < Math.max(2, Math.min(ring.size, 5)); attempt++) {
+        const key = ring.next();
+        if (!key) break;
+        try {
+          const j = await postJson(
+            `${GEMINI}/models/${textModel}:generateContent`,
+            {
+              contents: [{ role: "user", parts: [{ inlineData: { mimeType, data: data.toString("base64") } }, { text: prompt }] }],
+              generationConfig: { responseMimeType: "application/json", temperature: 0 },
+            },
+            { "x-goog-api-key": key },
+            180_000,
+          );
+          const text = j.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("") ?? "";
+          return schema.parse(extractJson(text)).segments.sort((a, b) => a.startSec - b.startSec);
+        } catch (e) {
+          last = e;
+          if (e instanceof HttpError && [403, 429, 500, 502, 503].includes(e.status)) ring.rest(key);
+          else if (!(e instanceof SyntaxError)) throw e;
+        }
+      }
+      throw new Error(`audio transcription failed: ${(last as Error)?.message ?? last}`);
     },
 
     async embed(texts, task) {

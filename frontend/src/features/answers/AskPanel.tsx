@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { BookOpen, LoaderCircle, Sparkles } from "lucide-react";
-import type { AskResponse, Citation, SourceResponse } from "@deep-notes/shared";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { BookOpen, LoaderCircle, RefreshCw, Sparkles } from "lucide-react";
+import type { AskResponse, Citation, SourceResponse, WorkspaceAiAssistResponse } from "@deep-notes/shared";
 import { REACTION_FOR_EVENT } from "@deep-notes/shared";
 import { BubiMascot } from "@/components/shared/BubiMascot";
 import { ErrorState } from "@/components/shared/PageStates";
@@ -12,15 +12,35 @@ import { ApiRequestError, api, jsonBody } from "@/lib/api";
 import { askQuestionSchema } from "@deep-notes/shared";
 import { SourceScopePicker } from "@/features/sources/SourceScopePicker";
 import { useSourceScope } from "@/features/sources/useSourceScope";
-import { AiAssistPanel } from "@/features/answers/AiAssistPanel";
+
+function suggestionErrorMessage(error: unknown) {
+  if (!(error instanceof ApiRequestError)) return "Saran pertanyaan belum berhasil dimuat.";
+  if (error.status === 404) return "Server belum menyediakan saran otomatis. Perbarui dan deploy API POST /notebooks/:id/ai/assist.";
+  if (error.status === 400 || error.code === "VALIDATION") return "Backend menolak format permintaan saran. Samakan validasi suggest_questions dengan kontrak terbaru agar input kosong dan sourceIds diizinkan. Kamu tetap bisa mengetik pertanyaan sendiri.";
+  return error.message;
+}
 
 export function AskPanel({ notebookId, sources, onCitationSelect }: { notebookId: string; sources: SourceResponse[]; onCitationSelect?: (citation: Citation) => void }) {
   const readySources = sources.filter((source) => source.status === "ready");
   const [question, setQuestion] = useState("");
   const { sourceIds: selectedIds, selectedSourceIds, setSourceIds: setSelectedIds } = useSourceScope(notebookId, sources);
+  const activeSources = readySources.filter((source) => selectedSourceIds.includes(source.id));
+  const sourceScopeKey = selectedSourceIds.slice().sort().join(",");
+  const sourceVersion = activeSources.map((source) => `${source.id}:${source.chunkCount}`).sort().join("|");
+  const canUseSources = activeSources.length > 0;
   const [answer, setAnswer] = useState<AskResponse | null>(null);
   const [answerAnimationKey, setAnswerAnimationKey] = useState(0);
   const [validationError, setValidationError] = useState("");
+  const suggestions = useQuery({
+    queryKey: ["notebooks", notebookId, "ask-suggestions", sourceScopeKey, sourceVersion],
+    queryFn: () => api<WorkspaceAiAssistResponse>(`/notebooks/${notebookId}/ai/assist`, jsonBody("POST", {
+      task: "suggest_questions",
+      input: "",
+      sourceIds: selectedSourceIds,
+    })),
+    enabled: canUseSources,
+    staleTime: 5 * 60_000,
+  });
   const ask = useMutation({
     mutationFn: (body: { question: string; sourceIds?: string[] }) => api<AskResponse>(`/notebooks/${notebookId}/ask`, jsonBody("POST", body)),
     onSuccess: (response) => {
@@ -61,14 +81,19 @@ export function AskPanel({ notebookId, sources, onCitationSelect }: { notebookId
         <div className="flex flex-col gap-2 sm:flex-row">
           <Input
             autoComplete="off"
-            disabled={ask.isPending || readySources.length === 0}
+            disabled={ask.isPending || !canUseSources}
             id="ask-question"
             maxLength={1000}
             onChange={(event) => setQuestion(event.target.value)}
-            placeholder={readySources.length ? "Contoh: Apa fungsi switch pada topologi bintang?" : "Tambahkan materi yang siap dibaca dulu"}
+            placeholder={
+              !readySources.length ? "Tambahkan materi yang siap dibaca dulu"
+                : activeSources.length === 1 ? `Tanyakan sesuatu tentang ${activeSources[0]!.title}`
+                  : canUseSources ? `Tanyakan sesuatu dari ${activeSources.length} sumber terpilih`
+                    : "Pilih setidaknya satu sumber yang siap dibaca"
+            }
             value={question}
           />
-          <Button disabled={ask.isPending || readySources.length === 0} type="submit">
+          <Button disabled={ask.isPending || !canUseSources} type="submit">
             {ask.isPending ? <LoaderCircle aria-hidden="true" className="animate-spin" /> : <Sparkles aria-hidden="true" />}
             Tanyakan
           </Button>
@@ -77,7 +102,20 @@ export function AskPanel({ notebookId, sources, onCitationSelect }: { notebookId
         {validationError && <p className="text-sm text-destructive" role="alert">{validationError}</p>}
       </form>
 
-      {readySources.length > 0 && <AiAssistPanel availableTasks={["suggest_questions"]} applyLabel="Pakai pertanyaan pertama" input="Buat pertanyaan belajar tentang topik penting dalam materi ini." notebookId={notebookId} onApply={(_, items) => setQuestion(items[0] ?? "")} showSourcePicker={false} sources={sources} title="Belum tahu harus bertanya apa?"/>}
+      {readySources.length > 0 && <section aria-label="Saran pertanyaan dari sumber" className="space-y-3 rounded-2xl bg-muted/50 p-4">
+        <div className="flex items-start justify-between gap-3"><div><h3 className="font-semibold text-navy">Belum tahu harus bertanya apa?</h3><p className="mt-1 text-xs leading-5 text-muted-foreground">Bubi membuat saran dari materi yang sedang dipilih.</p></div><Sparkles aria-hidden="true" className="mt-1 size-4 shrink-0 text-teal"/></div>
+        {!canUseSources && <p className="text-sm text-muted-foreground" role="status">Pilih setidaknya satu sumber yang siap dibaca.</p>}
+        {canUseSources && suggestions.isPending && <div className="flex items-center gap-3 rounded-xl bg-card p-3" role="status"><BubiMascot {...REACTION_FOR_EVENT.waiting_for_ai} className="h-10 w-auto" decorative/><p className="text-sm text-muted-foreground">Bubi sedang membaca {activeSources.length === 1 ? activeSources[0]!.title : `${activeSources.length} sumber terpilih`}…</p></div>}
+        {canUseSources && suggestions.isError && <div className="space-y-2" role="alert"><p className="text-sm text-destructive">{suggestionErrorMessage(suggestions.error)}</p><Button disabled={suggestions.isFetching} onClick={() => void suggestions.refetch()} size="sm" type="button" variant="outline"><RefreshCw aria-hidden="true" className={suggestions.isFetching ? "animate-spin" : undefined}/>Coba lagi</Button></div>}
+        {suggestions.data && !suggestions.data.grounded && <div className="space-y-2"><p className="text-sm text-muted-foreground">{suggestions.data.text}</p><Button disabled={suggestions.isFetching} onClick={() => void suggestions.refetch()} size="sm" type="button" variant="outline"><RefreshCw aria-hidden="true" className={suggestions.isFetching ? "animate-spin" : undefined}/>Buat saran lagi</Button></div>}
+        {suggestions.data?.grounded && <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">{suggestions.data.text}</p>
+          <div className="grid gap-2">
+            {suggestions.data.items.map((item, index) => <Button className="h-auto justify-start whitespace-normal py-2.5 text-left" key={`${index}-${item}`} onClick={() => { setQuestion(item); setValidationError(""); }} size="sm" type="button" variant="outline">{item}</Button>)}
+          </div>
+          {suggestions.data.citations.length > 0 && <p className="text-xs text-muted-foreground">Acuan: {[...new Set(suggestions.data.citations.map((citation) => `${citation.sourceTitle}${citation.page ? ` · hlm. ${citation.page}` : ""}`))].slice(0, 4).join(", ")}</p>}
+        </div>}
+      </section>}
       {ask.isPending && <div className="flex items-center gap-3 rounded-2xl bg-secondary/70 p-3" role="status">
         <BubiMascot {...REACTION_FOR_EVENT.waiting_for_ai} className="h-12 w-auto" decorative />
         <p className="text-sm font-semibold text-navy">Bubi sedang mencari jawaban di materi workspace…</p>

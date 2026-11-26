@@ -17,7 +17,7 @@ export const createNotebookSchema = z.object({
 });
 export type CreateNotebookInput = z.infer<typeof createNotebookSchema>;
 
-export const sourceKindSchema = z.enum(["pdf", "text", "docx", "pptx", "xlsx", "csv", "image", "link"]);
+export const sourceKindSchema = z.enum(["pdf", "text", "docx", "pptx", "xlsx", "csv", "image", "audio", "link"]);
 export type SourceKind = z.infer<typeof sourceKindSchema>;
 
 /** One piece of evidence behind an answer: which source, which page, which passage. */
@@ -38,12 +38,21 @@ export type AskQuestionInput = z.infer<typeof askQuestionSchema>;
 
 export const workspaceAiTaskSchema = z.enum(["suggest_questions", "summarize", "draft", "practice_guide"]);
 export type WorkspaceAiTask = z.infer<typeof workspaceAiTaskSchema>;
-export const workspaceAiAssistSchema = z.object({
-  task: workspaceAiTaskSchema,
-  /** User text is task context only; factual claims still have to come from notebook sources. */
-  input: z.string().trim().min(3).max(4000),
-  sourceIds: z.array(z.string().uuid()).min(1).max(40).optional(),
-});
+const assistSourceScopeSchema = { sourceIds: z.array(z.string().uuid()).min(1).max(40).optional() };
+export const workspaceAiAssistSchema = z.discriminatedUnion("task", [
+  z.object({
+    task: z.literal("suggest_questions"),
+    /** Empty context asks for questions directly from the selected source passages. */
+    input: z.string().trim().max(4000),
+    ...assistSourceScopeSchema,
+  }),
+  z.object({
+    task: z.enum(["summarize", "draft", "practice_guide"]),
+    /** User text is task context only; factual claims still have to come from notebook sources. */
+    input: z.string().trim().min(3).max(4000),
+    ...assistSourceScopeSchema,
+  }),
+]);
 export type WorkspaceAiAssistInput = z.infer<typeof workspaceAiAssistSchema>;
 
 /** An answer is either grounded (has citations) or an explicit "not found in the sources". */

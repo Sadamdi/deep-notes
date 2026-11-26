@@ -1,8 +1,8 @@
 # F-03 and F-12 Source upload and ingestion
 
-Status: implemented and tested. PDF, text, Markdown, DOCX, PPTX and web links.
+Status: implemented locally with mocked AI integration tests. Audio transcription needs a configured Gemini key and has not been verified against a real model in this environment.
 
-Endpoints: `POST /notebooks/:id/sources/file` (multipart field `file`), `/sources/text`, `/sources/link`; `GET /sources`, `GET /sources/:sourceId`, `GET /sources/:sourceId/pages/:page`, `DELETE /sources/:sourceId`.
+Endpoints: `POST /notebooks/:id/sources/file` (multipart field `file`), `/sources/text`, `/sources/link`; `GET /sources`, `GET /sources/:sourceId`, `GET /sources/:sourceId/pages/:page`, `GET /sources/:sourceId/transcript`, `GET /sources/:sourceId/visual?kind=mindmap|timeline|chart`, `DELETE /sources/:sourceId`.
 
 Flow: validate type and signature, extract text per page, split into passages (about 900 characters, on paragraph and sentence boundaries), embed in batches, store with the page number, set status `ready`. Work runs in-process, two at a time; status is `processing`, `ready` or `failed` (with a short reason) on the source row.
 
@@ -16,3 +16,7 @@ Business rules
 - BR-06 Only the uploader or the owner can delete a source; editors and owners can add.
 - BR-07 Uploaded text is treated as data. Prompts tell the model to ignore instructions found inside sources (see F-04).
 - BR-09 Spreadsheets: XLSX sheets become numbered pages and each row is stored as `column: value` pairs; CSV handles quotes, BOM and semicolons. Images (PNG, JPG, WEBP) are read by the vision model like scanned pages. At most 2000 rows per sheet are indexed.
+- BR-10 CSV/XLSX cell values are retained as structured rows (up to 2000 rows and 60 columns per sheet) for charts. The first column labels categories; remaining columns with numeric cells form data series. Values are parsed without AI or rounding.
+- BR-11 PPTX slide text keeps the original slide number and is returned in slide order by `kind=timeline`. Each page retains at least one passage even when its extracted text is shorter than 20 characters.
+- BR-12 MP3, M4A, MP4, WAV, AAC, OGG and WEBM files are checked against their container signature where applicable, transcribed in the background, and stored only as timestamped text segments and searchable passages. The original audio is not persisted. Gemini must be configured for this path; the transcript route is available only after source ingestion reaches `ready`.
+- BR-13 Sources remain notebook-scoped. Transcript, timeline, chart, and source page requests all use the existing member check; derived tables and transcripts cascade when the source is deleted.

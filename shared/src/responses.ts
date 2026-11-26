@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { citationSchema, notebookRoleSchema } from "./notebook.js";
+import { citationSchema, notebookRoleSchema, sourceKindSchema } from "./notebook.js";
 import { emotionSchema, quizKindSchema } from "./schemas.js";
 import { animationSchema } from "./companion.js";
 import { mascotSchema, performanceSchema } from "./companion.js";
@@ -38,7 +38,7 @@ export type NotebookListItem = z.infer<typeof notebookListItemSchema>;
 export const sourceResponseSchema = z.object({
   id: z.string().uuid(),
   title: z.string(),
-  kind: z.enum(["pdf", "text", "docx", "pptx", "xlsx", "csv", "image", "link"]),
+  kind: sourceKindSchema,
   status: z.enum(["processing", "ready", "failed"]),
   error: z.string().nullable(),
   pageCount: z.number().int().nullable(),
@@ -53,7 +53,7 @@ export type SourceResponse = z.infer<typeof sourceResponseSchema>;
 export const sourceAcceptedSchema = z.object({
   id: z.string().uuid(),
   title: z.string(),
-  kind: z.enum(["pdf", "text", "docx", "pptx", "xlsx", "csv", "image", "link"]),
+  kind: sourceKindSchema,
   status: z.literal("processing"),
 });
 export type SourceAccepted = z.infer<typeof sourceAcceptedSchema>;
@@ -186,6 +186,7 @@ export const feedPostSchema = z.object({
   authorCourse: z.string().nullable(),
   likes: z.number().int().nonnegative(),
   likedByMe: z.boolean(),
+  savedByMe: z.boolean(),
   comments: z.number().int().nonnegative(),
   followingAuthor: z.boolean(),
   card: feedCardSchema.nullable(),
@@ -194,6 +195,31 @@ export type FeedPost = z.infer<typeof feedPostSchema>;
 
 export const feedResponseSchema = z.object({ posts: z.array(feedPostSchema), nextBefore: isoDate.nullable() });
 export type FeedResponse = z.infer<typeof feedResponseSchema>;
+
+export const workspaceNoteSchema = z.object({
+  id: z.string().uuid(), title: z.string(), body: z.string(), sourceId: z.string().uuid().nullable(),
+  page: z.number().int().positive().nullable(), createdAt: isoDate, updatedAt: isoDate,
+});
+export type WorkspaceNoteResponse = z.infer<typeof workspaceNoteSchema>;
+
+export const discussionMessageSchema = z.object({
+  id: z.string().uuid(), authorId: z.string().uuid(), authorName: z.string(), body: z.string(),
+  sourceId: z.string().uuid().nullable(), createdAt: isoDate,
+});
+export type DiscussionMessage = z.infer<typeof discussionMessageSchema>;
+export const discussionResponseSchema = z.object({ messages: z.array(discussionMessageSchema), nextBefore: z.string().nullable() });
+export type DiscussionResponse = z.infer<typeof discussionResponseSchema>;
+
+export const writerDraftResponseSchema = z.object({
+  id: z.string().uuid(), title: z.string(), summary: z.string(), body: z.string(), createdAt: isoDate, updatedAt: isoDate,
+});
+export type WriterDraftResponse = z.infer<typeof writerDraftResponseSchema>;
+export const writerDraftListSchema = z.array(writerDraftResponseSchema);
+
+export const savedPostListSchema = z.object({ posts: z.array(feedPostSchema) });
+export type SavedPostList = z.infer<typeof savedPostListSchema>;
+export const savePostResponseSchema = z.object({ saved: z.boolean() });
+export type SavePostResponse = z.infer<typeof savePostResponseSchema>;
 
 export const commentResponseSchema = z.object({
   id: z.string().uuid(),
@@ -242,6 +268,21 @@ export const partnersResponseSchema = z.object({
 });
 export type PartnersResponse = z.infer<typeof partnersResponseSchema>;
 
+export const friendsResponseSchema = z.object({
+  friends: z.array(z.object({ id: z.string().uuid(), name: z.string(), course: z.string().nullable(), since: isoDate })),
+  requests: z.array(z.object({
+    id: z.string().uuid(), userId: z.string().uuid(), name: z.string(), course: z.string().nullable(), createdAt: isoDate,
+    direction: z.enum(["incoming", "outgoing"]),
+  })),
+});
+export type FriendsResponse = z.infer<typeof friendsResponseSchema>;
+export const friendRequestResultSchema = z.object({ sent: z.boolean(), message: z.string() });
+export type FriendRequestResult = z.infer<typeof friendRequestResultSchema>;
+export const addMemberResultSchema = z.object({ userId: z.string().uuid(), role: z.enum(["editor", "viewer"]) });
+export type AddMemberResult = z.infer<typeof addMemberResultSchema>;
+export const inviteResultSchema = z.object({ token: z.string(), role: z.enum(["editor", "viewer"]), expiresInDays: z.number().int().positive(), maxUses: z.number().int().positive() });
+export type InviteResult = z.infer<typeof inviteResultSchema>;
+
 export const publicProfileSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
@@ -250,6 +291,7 @@ export const publicProfileSchema = z.object({
   following: z.number().int().nonnegative(),
   posts: z.number().int().nonnegative(),
   followedByMe: z.boolean(),
+  friendshipStatus: z.enum(["none", "incoming", "outgoing", "friends"]),
   points: z.number().int().nonnegative(),
   badges: z.array(z.string()),
 });
@@ -303,8 +345,31 @@ export const mindMapResponseSchema = z.object({
 });
 export type MindMapResponse = z.infer<typeof mindMapResponseSchema>;
 
+export const sourceTranscriptSchema = z.object({
+  sourceId: z.string().uuid(),
+  segments: z.array(z.object({ startSec: z.number().nonnegative(), endSec: z.number().positive(), text: z.string().min(1) }).refine((segment) => segment.endSec > segment.startSec)),
+});
+export type SourceTranscript = z.infer<typeof sourceTranscriptSchema>;
+
+export const sourceTimelineSchema = z.object({
+  sourceId: z.string().uuid(), kind: z.literal("timeline"), cached: z.boolean(),
+  slides: z.array(z.object({ slide: z.number().int().positive(), text: z.string() })),
+});
+export type SourceTimeline = z.infer<typeof sourceTimelineSchema>;
+
+export const sourceChartSchema = z.object({
+  sourceId: z.string().uuid(), kind: z.literal("chart"), cached: z.boolean(),
+  tables: z.array(z.object({
+    name: z.string(), categoryColumn: z.string(),
+    series: z.array(z.object({ name: z.string(), points: z.array(z.object({ label: z.string(), value: z.number() })) })),
+  })),
+});
+export type SourceChart = z.infer<typeof sourceChartSchema>;
+export const sourceVisualResponseSchema = z.discriminatedUnion("kind", [mindMapResponseSchema, sourceTimelineSchema, sourceChartSchema]);
+export type SourceVisualResponse = z.infer<typeof sourceVisualResponseSchema>;
+
 export const gameSessionSchema = z.object({
-  id: z.string().uuid(), mode: sessionModeSchema, status: z.enum(["waiting", "running", "finished"]), focusTopic: z.string().nullable(),
+  id: z.string().uuid(), hostId: z.string().uuid(), mode: sessionModeSchema, status: z.enum(["waiting", "running", "finished"]), focusTopic: z.string().nullable(),
   roundCount: z.number().int().nonnegative(), rounds: z.array(publicRoundSchema), answeredRounds: z.array(z.number().int().nonnegative()),
   participants: z.array(z.object({ userId: z.string().uuid(), name: z.string(), score: z.number().int().nonnegative(), finished: z.boolean(), roundsAnswered: z.number().int().nonnegative() })),
   reactions: z.record(z.string(), z.object({ animation: animationSchema, emotion: emotionSchema })),
@@ -351,7 +416,7 @@ export const companionCatalogSchema = z.object({
   styles: z.array(z.enum(["teacher", "friend", "coach"])),
   levels: z.array(z.enum(["simple", "normal", "detailed"])),
   reactions: z.record(z.string(), z.object({ animation: animationSchema, emotion: emotionSchema })),
-  sourceKinds: z.array(z.enum(["pdf", "text", "docx", "pptx", "xlsx", "csv", "image", "link"])),
+  sourceKinds: z.array(sourceKindSchema),
   upload: z.object({ maxFileMb: z.number(), extensions: z.array(z.string()), plannedExtensions: z.array(z.string()) }),
 });
 export type CompanionCatalog = z.infer<typeof companionCatalogSchema>;
@@ -364,3 +429,33 @@ export const teachBackResponseSchema = z.object({
   performance: performanceSchema,
 });
 export type TeachBackResponse = z.infer<typeof teachBackResponseSchema>;
+
+export const notificationSchema = z.object({
+  id: z.string().uuid(), kind: z.enum(["friend_request", "friend_accepted", "workspace_member_added", "join_request_decision"]),
+  title: z.string(), body: z.string(), href: z.string(), readAt: isoDate.nullable(), createdAt: isoDate,
+  actor: z.object({ id: z.string().uuid(), name: z.string() }).nullable(),
+});
+export type NotificationItem = z.infer<typeof notificationSchema>;
+export const notificationListSchema = z.object({ items: z.array(notificationSchema), unreadCount: z.number().int().nonnegative() });
+export type NotificationList = z.infer<typeof notificationListSchema>;
+
+export const classroomPresenceSchema = z.object({
+  members: z.array(z.object({ userId: z.string().uuid(), name: z.string(), lastSeenAt: isoDate })),
+  expiresAfterSec: z.literal(45), heartbeatEverySec: z.literal(15),
+});
+export type ClassroomPresence = z.infer<typeof classroomPresenceSchema>;
+
+export const publishedArticleSchema = z.object({
+  id: z.string().uuid(), authorId: z.string().uuid(), authorName: z.string(), notebookId: z.string().uuid().nullable(),
+  visibility: z.enum(["public", "workspace"]), version: z.number().int().positive(), title: z.string(), summary: z.string(), body: z.string(), coverUrl: z.string().url().nullable(),
+  createdAt: isoDate, updatedAt: isoDate, commentCount: z.number().int().nonnegative(),
+});
+export type PublishedArticle = z.infer<typeof publishedArticleSchema>;
+export const publicationListSchema = z.object({ items: z.array(publishedArticleSchema), nextCursor: z.string().nullable() });
+export type PublicationList = z.infer<typeof publicationListSchema>;
+export const articleCommentResponseSchema = z.object({
+  id: z.string().uuid(), parentId: z.string().uuid().nullable(), body: z.string(), authorId: z.string().uuid(), authorName: z.string(), createdAt: isoDate,
+});
+export type ArticleComment = z.infer<typeof articleCommentResponseSchema>;
+export const articleDetailSchema = z.object({ article: publishedArticleSchema, comments: z.array(articleCommentResponseSchema) });
+export type ArticleDetail = z.infer<typeof articleDetailSchema>;

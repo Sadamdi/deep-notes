@@ -2,6 +2,8 @@ node_modules/
 dist/
 build/
 coverage/
+frontend/test-results/
+frontend/playwright-report/
 *.log
 .turbo/
 .vite/

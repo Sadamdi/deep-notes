@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link } from "react-router";
 import { Bookmark, BookOpenText, Heart, Trash2, UserRoundPlus } from "lucide-react";
@@ -8,7 +8,6 @@ import { AppDialog } from "@/components/shared/AppDialog";
 import { Button } from "@/components/ui/button";
 import { CommentDialog } from "@/features/feed/CommentDialog";
 import { api, jsonBody } from "@/lib/api";
-import { readSavedPostIds, savedPostIdsKey, writeSavedPostIds } from "@/features/feed/savedPosts";
 
 function relativeTime(value: string) {
   const elapsed = Date.now() - Date.parse(value);
@@ -23,17 +22,15 @@ export function FeedPostCard({ post }: { post: FeedPost }) {
   const queryClient = useQueryClient();
   const me = useAuthMe();
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const savedIds = useQuery({ queryKey: savedPostIdsKey, queryFn: readSavedPostIds });
   const savePost = useMutation({
-    mutationFn: async () => {
-      const current = savedIds.data ?? [];
-      const next = current.includes(post.id) ? current.filter((id) => id !== post.id) : [...current, post.id];
-      if (!writeSavedPostIds(next)) throw new Error("Browser tidak dapat menyimpan daftar bacaan di perangkat ini.");
-      return next;
-    },
-    onSuccess: (ids) => {
-      queryClient.setQueryData(savedPostIdsKey, ids);
-      void queryClient.invalidateQueries({ queryKey: ["saved-posts"] });
+    mutationFn: () => post.savedByMe
+      ? api<{ saved: boolean }>(`/posts/${post.id}/save`, { method: "DELETE" })
+      : api<{ saved: boolean }>(`/posts/${post.id}/save`, jsonBody("POST")),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["feed"] }),
+        queryClient.invalidateQueries({ queryKey: ["saved-posts"] }),
+      ]);
     },
   });
   const like = useMutation<{ liked: boolean; likes: number }>({
@@ -64,7 +61,7 @@ export function FeedPostCard({ post }: { post: FeedPost }) {
       {post.card?.type === "result" && <div className="mt-4 rounded-2xl bg-warning/25 p-4"><p className="font-semibold text-navy">Sesi {post.card.mode === "solo" ? "mandiri" : post.card.mode === "duel" ? "duel" : "kelompok"}</p><p className="mt-1 text-sm text-muted-foreground">{post.card.correct ?? 0}/{post.card.total ?? 0} jawaban benar · {post.card.points ?? 0} poin</p></div>}
       <footer className="mt-4 flex flex-wrap items-center gap-1 border-t pt-3">
         <Button aria-pressed={post.likedByMe} disabled={like.isPending} onClick={() => like.mutate()} size="sm" variant={post.likedByMe ? "secondary" : "ghost"}><Heart aria-hidden="true" className={post.likedByMe ? "fill-current" : ""} />{post.likes}</Button>
-        <Button aria-label={savedIds.data?.includes(post.id) ? "Hapus dari bacaan tersimpan di perangkat ini" : "Simpan untuk dibaca di perangkat ini"} aria-pressed={savedIds.data?.includes(post.id) ?? false} disabled={savePost.isPending || savedIds.isPending} onClick={() => savePost.mutate()} size="sm" variant={savedIds.data?.includes(post.id) ? "secondary" : "ghost"}><Bookmark aria-hidden="true" className={savedIds.data?.includes(post.id) ? "fill-current" : ""}/>{savedIds.data?.includes(post.id) ? "Tersimpan" : "Simpan"}</Button>
+        <Button aria-label={post.savedByMe ? "Hapus dari bacaan tersimpan di akunmu" : "Simpan ke bacaan akunmu"} aria-pressed={post.savedByMe} disabled={savePost.isPending} onClick={() => savePost.mutate()} size="sm" variant={post.savedByMe ? "secondary" : "ghost"}><Bookmark aria-hidden="true" className={post.savedByMe ? "fill-current" : ""}/>{post.savedByMe ? "Tersimpan" : "Simpan"}</Button>
         <CommentDialog commentCount={post.comments} postAuthorId={post.authorId} postId={post.id} />
         {me.data?.id === post.authorId && <AppDialog description="Unggahan akan dihapus dari feed semua orang." onOpenChange={setDeleteOpen} open={deleteOpen} title="Hapus unggahan" trigger={<Button aria-label="Hapus unggahan" onClick={() => setDeleteOpen(true)} size="sm" variant="ghost"><Trash2 aria-hidden="true"/></Button>}><p className="text-sm leading-6 text-muted-foreground">Tanggapan dan suka pada unggahan ini juga tidak akan tampil lagi.</p>{deletePost.isError && <p className="mt-3 text-sm text-destructive" role="alert">{deletePost.error.message}</p>}<Button className="mt-4 w-full" disabled={deletePost.isPending} onClick={() => deletePost.mutate(undefined, { onSuccess: () => setDeleteOpen(false) })} variant="destructive">{deletePost.isPending ? "Menghapus…" : "Hapus unggahan"}</Button></AppDialog>}
       </footer>

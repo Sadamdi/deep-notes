@@ -1,11 +1,11 @@
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { ANIMATIONS, BUBI_EMOTIONS, performanceSchema } from "@deep-notes/shared";
+import { ANIMATIONS, BUBI_EMOTIONS, performanceSchema, sourceTranscriptSchema, sourceVisualResponseSchema } from "@deep-notes/shared";
 import { env } from "../src/config/env.js";
 import type { Db } from "../src/db/index.js";
 import { waitForIngestion } from "../src/modules/sources/ingest.js";
 import { parseCsv } from "../src/modules/sources/extract.js";
-import { closeApp, createNotebookWithSources, freshApp, makeXlsx, signUp } from "./helpers.js";
+import { closeApp, createNotebookWithSources, freshApp, makePptx, makeXlsx, signUp } from "./helpers.js";
 
 let app: Awaited<ReturnType<typeof freshApp>>["app"];
 let db: Db;
@@ -17,14 +17,16 @@ afterAll(() => closeApp(db));
 describe("companion catalog and demo (no login, for the frontend)", () => {
   it("lists mascots, the closed animation vocabulary, reactions and upload limits", async () => {
     const r = await request(app).get("/api/v1/companion/catalog");
-    expect(r.status).toBe(200);
+    expect(r.status, JSON.stringify(r.body)).toBe(200);
     const d = r.body.data;
     expect(d.animations).toEqual([...ANIMATIONS]);
     expect(d.emotions).toEqual(BUBI_EMOTIONS);
     expect(d.mascots.map((m: { role: string }) => m.role).sort()).toEqual(["coach", "friend", "teacher"]);
     expect(d.mascots[0].animations.length).toBe(ANIMATIONS.length);
     expect(d.reactions.quiz_perfect).toEqual({ animation: "celebrate", emotion: "semangat" });
-    expect(d.upload.extensions).toEqual(expect.arrayContaining([".pdf", ".pptx", ".docx", ".xlsx", ".csv", ".png"]));
+    expect(d.sourceKinds).toContain("audio");
+    expect(d.upload.extensions).toEqual(expect.arrayContaining([".pdf", ".pptx", ".docx", ".xlsx", ".csv", ".png", ".mp3"]));
+    expect(d.upload.plannedExtensions).toEqual([]);
     // every reaction must use a clip that exists in the vocabulary
     for (const v of Object.values(d.reactions) as Array<{ animation: string }>) expect(ANIMATIONS).toContain(v.animation);
   });
@@ -32,7 +34,7 @@ describe("companion catalog and demo (no login, for the frontend)", () => {
   it("serves sample performances that match the contract schema", async () => {
     for (const scenario of ["explain", "notfound"]) {
       const r = await request(app).get(`/api/v1/companion/demo?scenario=${scenario}`);
-      expect(performanceSchema.safeParse(r.body.data).success, scenario).toBe(true);
+      expect(performanceSchema.safeParse(r.body.data).success, `${scenario}: ${JSON.stringify(r.body)}`).toBe(true);
     }
   });
 });
@@ -101,6 +103,45 @@ describe("spreadsheets and images as sources", () => {
     expect(src).toMatchObject({ kind: "xlsx", status: "ready", pageCount: 1 });
     const page = await u.agent.get(`/api/v1/notebooks/${nb}/sources/${src.id}/pages/1`);
     expect(page.body.data.text).toContain("protokol: HTTPS; port: 443");
+  });
+
+  it("builds chart data from extracted numeric cells and serves ordered slide timelines", async () => {
+    const u = await signUp(app, "Visualizer");
+    const nb = (await u.agent.post("/api/v1/notebooks").send({ title: "Visual data" })).body.data.id as string;
+    const csv = Buffer.from("Topic,Count,Score\nRouter,12,8.5\nSwitch,6,9\n", "utf8");
+    const acceptedCsv = await u.agent.post(`/api/v1/notebooks/${nb}/sources/file`).attach("file", csv, "scores.csv");
+    expect(acceptedCsv.status).toBe(202);
+    const pptx = await makePptx(["Overview of the lesson", "Practice the steps"]);
+    const acceptedSlides = await u.agent.post(`/api/v1/notebooks/${nb}/sources/file`).attach("file", pptx, "lesson.pptx");
+    expect(acceptedSlides.status).toBe(202);
+    await waitForIngestion();
+    const sources = (await u.agent.get(`/api/v1/notebooks/${nb}/sources`)).body.data as Array<{ id: string; kind: string }>;
+    const chart = await u.agent.get(`/api/v1/notebooks/${nb}/sources/${sources.find((source) => source.kind === "csv")!.id}/visual?kind=chart`);
+    expect(chart.status).toBe(200);
+    expect(sourceVisualResponseSchema.safeParse(chart.body.data).success).toBe(true);
+    expect(chart.body.data.tables[0].series[0].points).toEqual([{ label: "Router", value: 12 }, { label: "Switch", value: 6 }]);
+    expect((await u.agent.get(`/api/v1/notebooks/${nb}/sources/${sources.find((source) => source.kind === "csv")!.id}/visual?kind=chart`)).body.data.cached).toBe(true);
+    const timeline = await u.agent.get(`/api/v1/notebooks/${nb}/sources/${sources.find((source) => source.kind === "pptx")!.id}/visual?kind=timeline`);
+    expect(timeline.status).toBe(200);
+    expect(sourceVisualResponseSchema.safeParse(timeline.body.data).success).toBe(true);
+    expect(timeline.body.data.slides.map((slide: { slide: number }) => slide.slide)).toEqual([1, 2]);
+  });
+
+  it("transcribes supported audio files into a timestamped, notebook-scoped source", async () => {
+    const owner = await signUp(app, "Listener");
+    const visitor = await signUp(app, "Audio visitor");
+    const nb = (await owner.agent.post("/api/v1/notebooks").send({ title: "Audio source" })).body.data.id as string;
+    const mp3 = Buffer.concat([Buffer.from("ID3"), Buffer.alloc(32)]);
+    expect((await owner.agent.post(`/api/v1/notebooks/${nb}/sources/file`).attach("file", Buffer.from("not audio"), "fake.mp3")).status).toBe(400);
+    const uploaded = await owner.agent.post(`/api/v1/notebooks/${nb}/sources/file`).attach("file", mp3, "lecture.mp3");
+    expect(uploaded.status).toBe(202);
+    await waitForIngestion();
+    const result = await owner.agent.get(`/api/v1/notebooks/${nb}/sources/${uploaded.body.data.id}/transcript`);
+    expect(result.status).toBe(200);
+    expect(sourceTranscriptSchema.safeParse(result.body.data).success).toBe(true);
+    expect(result.body.data.segments[0]).toMatchObject({ startSec: 0, endSec: 2.5, text: expect.stringContaining("algoritma") });
+    expect((await visitor.agent.get(`/api/v1/notebooks/${nb}/sources/${uploaded.body.data.id}/transcript`)).status).toBe(404);
+    expect((await owner.agent.get(`/api/v1/notebooks/${nb}/sources/${uploaded.body.data.id}/visual?kind=chart`)).status).toBe(400);
   });
 
   it("accepts real images through text recognition and rejects fake ones", async () => {

@@ -21,7 +21,7 @@ export function GamePage() {
           {notebooks.data.map((notebook) => (
             <Card className="flex flex-col gap-4 rounded-3xl p-5 sm:flex-row sm:items-center sm:justify-between" key={notebook.id}>
               <div className="flex min-w-0 items-center gap-3"><span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-secondary text-primary"><Gamepad2 aria-hidden="true" /></span><div className="min-w-0"><h2 className="truncate font-bold text-navy">{notebook.title}</h2><p className="mt-1 text-sm text-muted-foreground">{notebook.sourceCount} sumber · {notebook.memberCount} anggota</p></div></div>
-              <Button asChild variant="outline"><Link to={`/workspaces/${notebook.id}/game`}>Pilih workspace<ArrowRight aria-hidden="true" /></Link></Button>
+              <Button asChild variant="outline"><Link to={`/game/${notebook.id}`}>Pilih workspace<ArrowRight aria-hidden="true" /></Link></Button>
             </Card>
           ))}
         </div>

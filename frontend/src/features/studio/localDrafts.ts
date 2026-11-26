@@ -18,12 +18,3 @@ export function readWriterDrafts(): LocalDraft[] {
     return [];
   }
 }
-
-export function writeWriterDrafts(drafts: LocalDraft[]) {
-  try {
-    window.localStorage.setItem(storageKey, JSON.stringify(drafts));
-    return true;
-  } catch {
-    return false;
-  }
-}

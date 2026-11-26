@@ -53,6 +53,8 @@ Setiap ronde membawa `cue` (kalimat pembuka, `introAnimation`, `introEmotion`). 
 5. Tiap pemain `finish`; sesi `finished` bila semua selesai.
 Belum ada WebSocket; polling cukup untuk demo.
 
+The session response includes a stable `hostId`, independent of current score ordering. Only the host can start a shared session, and the API rejects the start until at least two participants have joined. Duel capacity is two players; group capacity is twelve. Session routes remain restricted to notebook members.
+
 ## 7. Jelaskan ke maskot dan peta konsep
 - `POST /notebooks/:id/companion/teach-back { topic, explanation, sourceIds? }` mengembalikan `evaluation` dan satu `performance` (format yang sama dengan penjelasan maskot): maskot membalas sebagai murid yang bingung, lalu menyebut poin yang kurang dengan sitasi. Bila topik tidak ada di sumber, `checkable: false` dan maskot `shrug`.
 - `GET /notebooks/:id/sources/:sourceId/visual?kind=mindmap` mengembalikan `{ nodes: [{id, label, level, page}], edges: [{from, to, label}] }`. Halaman yang tidak ada dibuang; hasil disimpan sehingga panggilan kedua cepat (`cached: true`).

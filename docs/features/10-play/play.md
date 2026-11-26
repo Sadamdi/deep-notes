@@ -13,4 +13,6 @@ Business rules
 - BR-08 Duel holds 2 players, group 12. Members of the notebook only; outsiders get 404.
 - BR-09 Teach-back: the mascot replies as a confused student using only retrieved sources; a topic missing from the sources is reported as not checkable (`checkable: false`), never judged.
 - BR-10 Mind map nodes cite a page only if that page exists; edges to unknown nodes are dropped; results are cached per source.
+- BR-11 Duel and group session responses include a stable `hostId`. Only that host can start, and the backend requires at least two joined players regardless of client state.
+- BR-12 Waiting/running sessions are polled from the frontend. The lobby shows host and participant counts; sessions remain restricted to workspace members.
 - Limits: 20 AI game requests per 10 minutes per user. Quality of generated items with the real models is checked with `agents/e2e-live.mjs`; no accuracy figure is claimed.

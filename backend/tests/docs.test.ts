@@ -24,6 +24,7 @@ describe("OpenAPI document", () => {
     const login = r.body.paths["/auth/login"].post;
     expect(login.requestBody.content["application/json"].schema.properties).toHaveProperty("password");
     expect(r.body.paths["/notebooks/{id}/sources/file"].post.requestBody.content).toHaveProperty("multipart/form-data");
+    expect(r.body.paths["/notebooks/{id}/ai/assist"].post.requestBody.content["application/json"].schema.oneOf).toHaveLength(2);
     expect(r.body.paths["/notebooks/{id}/companion/explain"].post.responses["200"].content["application/json"].schema.properties.data.properties).toHaveProperty("beats");
   });
 

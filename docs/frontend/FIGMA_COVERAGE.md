@@ -7,15 +7,21 @@ Reference: [Deep Notes — STACK 2026](https://www.figma.com/design/Agh2OMnizUCn
 | Designed family | Frontend route(s) | Coverage |
 |---|---|---|
 | Landing, login, registration, recovery | `/`, `/login`, `/register`, `/recover` | Landing is implemented. Sign In (`223:10101`) and Sign Up (`223:10144`) use the `Design Lagi` frames. Recovery is an explanatory state because no email reset contract exists. |
-| Feed, saved, following, discovery, social profile | `/home`, `/following`, `/saved`, `/discover`, `/profile`, `/users/:userId` | Existing feed/profile routes are API-backed. Saved IDs remain device-local and publication pages are separate. |
+| Feed, saved, following, discovery, social profile | `/home`, `/following`, `/saved`, `/discover`, `/profile`, `/users/:userId` | Feed/profile/save state is account-backed. Existing browser-saved IDs can be explicitly imported. Publication pages are separate. |
 | Workspace list, create/join, study workspace, sources, upload, citation preview | `/workspaces`, `/workspaces/new`, `/join/:token`, `/workspaces/:notebookId` | Uses notebook/source/ask APIs and source-page dialog; includes loading, empty, processing, failed, and request-error states exposed by the contract. |
 | Group activity, assignments, progress, gaps, quiz scoreboard | `/workspaces/:notebookId/team` and quiz routes | Uses group, assignment, quiz, and attempt contracts. |
-| Quiz and game modes, lobby/session/results, weekly/group scoreboard | `/workspaces/:notebookId/quizzes/:quizId`, `/game`, `/workspaces/:notebookId/game`, `/workspaces/:notebookId/sessions/:sessionId` | Uses existing quiz/game API contract. Unsupported realtime attendance is not implied. |
+| Quiz and game modes, lobby/session/results, weekly/group scoreboard | `/workspaces/:notebookId/quizzes/:quizId`, `/game`, `/workspaces/:notebookId/game`, `/workspaces/:notebookId/sessions/:sessionId` | Setup and quiz fields reflow on small screens; MCQ, true/false, and page-choice rounds use the Figma palette; ordering remains keyboard-operable. Duel/group lobby shows the server host, membership invite action, and live participant/score state. Session refresh remains polling, not realtime attendance. |
+| Friend requests and workspace invites | `/friends`, `/users/:userId`, workspace invite dialog | Account-backed incoming/outgoing/accepted states, accept/reject/cancel/remove, direct registered-email and accepted-friend invitations, and viewer/editor role selection. |
 | Companion and mind map | `/workspaces/:notebookId/companion`, `/workspaces/:notebookId/sources/:sourceId/map` | Uses companion and source-visual contracts with text alternatives. |
-| Notes, discussion, 3D class, material visualizer | `/workspaces/:notebookId/notes`, `/discussion`, `/class`, `/visualization` | Notes/discussion are labeled device-local. 3D class uses a real roster and source mind map; other visual types are marked unavailable when no contract exists. |
+| Notes, discussion, 3D class, material visualizer | `/workspaces/:notebookId/notes`, `/discussion`, `/class`, `/visualization` | Notes are private per account; discussion is visible to notebook members and refreshes by polling. Old local entries can be explicitly imported. 3D class uses a real roster and source mind map; other visual types remain unavailable without a contract. |
 | Account settings | `/account` | Uses the existing account/profile routes and explicit states for destructive or unavailable actions. |
-| Writer studio, editor, preview, publication/article/author pages | `/studio`, `/studio/preview/:draftId`, `/publications`, `/articles/:articleId`, `/authors/:authorId` | Studio draft/editor/preview are device-local. Public article and author publication routes are honest backend handoffs without fabricated content. |
-| Overlays and feedback states | Shared dialogs and route-level states | Reusable dialogs cover source-page preview, notifications, navigation, and confirmations; forms and server screens provide inline errors and empty/loading states. |
+| Writer studio, editor, preview, publication/article/author pages | `/studio`, `/studio/preview/:draftId`, `/publications`, `/articles/:articleId`, `/authors/:authorId` | Draft/editor/preview use account-scoped APIs; old drafts can be explicitly imported. Public article and author publication routes remain backend handoffs without fabricated content. |
+| Overlays and feedback states | Shared dialogs and route-level states | Reusable dialogs cover source-page preview, notifications, navigation, workspace membership/invites, and confirmations; forms and server screens provide inline errors and empty/loading states. |
+
+## Browser verification for social games
+
+- Playwright opens the duel lobby at desktop and phone dimensions, adds a friend with the viewer role, creates a viewer invite link, starts a round, selects an answer with the keyboard, and reaches the result screen.
+- Backend integration tests use isolated PGlite databases and the deterministic fake AI provider to cover solo play, duel authorization, group capacity, answer grading, and membership isolation. These are not live-model quality checks.
 
 ## Representative frames inspected
 

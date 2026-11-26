@@ -100,7 +100,7 @@ export function QuizPage() {
         : REACTION_FOR_EVENT.quiz_wrong;
     return (
       <div className="space-y-6">
-        <PageTitle eyebrow="Hasil latihan" title="Sesi selesai!" description={`${result.score} dari ${result.total} jawaban benar. Pelajari kembali penjelasan dan materi yang dirujuk.`} action={<div className="flex flex-wrap gap-2">{quiz.kind !== "practice" && <QuizScoreboardDialog notebookId={notebookId} quizId={quizId}/>}<Button onClick={() => navigate(`/workspaces/${notebookId}/game`)}><ArrowLeft aria-hidden="true" />Kembali ke game</Button></div>} />
+        <PageTitle eyebrow="Hasil latihan" title="Sesi selesai!" description={`${result.score} dari ${result.total} jawaban benar. Pelajari kembali penjelasan dan materi yang dirujuk.`} action={<div className="flex flex-wrap gap-2">{quiz.kind !== "practice" && <QuizScoreboardDialog notebookId={notebookId} quizId={quizId}/>}<Button onClick={() => navigate(`/game/${notebookId}`)}><ArrowLeft aria-hidden="true" />Kembali ke game</Button></div>} />
         <div className="rounded-3xl bg-navy p-6 text-white sm:flex sm:items-center sm:gap-6 sm:p-8">
           <BubiMascot animation={resultReaction.animation} animationKey={result.attemptId} className="mx-auto h-28 w-auto sm:mx-0" decorative emotion={resultReaction.emotion} />
           <div className="mt-4 sm:mt-0"><p className="text-sm text-white/70">Nilai latihan</p><p className="mt-1 text-4xl font-bold">{Math.round((result.score / result.total) * 100)}%</p><p className="mt-2 text-sm text-white/75">Kuis hanya memakai sumber workspace ini.</p></div>
@@ -129,7 +129,7 @@ export function QuizPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground" to={`/workspaces/${notebookId}/game`}><ArrowLeft aria-hidden="true" className="size-4" />Kembali ke sesi</Link>
+        <Link className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground" to={`/game/${notebookId}`}><ArrowLeft aria-hidden="true" className="size-4" />Kembali ke sesi</Link>
         <div className="flex items-center gap-4 text-sm font-semibold text-muted-foreground">
           <span>Soal {questionIndex + 1} dari {quiz.questions.length}</span>
           {remainingSeconds !== null && <span aria-live="polite" className={remainingSeconds < 30 ? "inline-flex items-center gap-2 text-destructive" : "inline-flex items-center gap-2"}><Clock3 aria-hidden="true" className="size-4" />{Math.floor(remainingSeconds / 60)}:{String(remainingSeconds % 60).padStart(2, "0")}</span>}

@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from "react-router";
 import { ArrowLeft, ArrowRight, Check, Clock3, X } from "lucide-react";
 import { REACTION_FOR_EVENT, submitAttemptSchema, type ExamStarted, type QuizAttemptResponse, type QuizResponse } from "@deep-notes/shared";
 import { BubiMascot } from "@/components/shared/BubiMascot";
+import { InlineCodeText } from "@/components/shared/InlineCodeText";
 import { Button } from "@/components/ui/button";
 import { BubiLoading, ErrorState, LoadingState, PageTitle } from "@/components/shared/PageStates";
 import { SourcePageDialog } from "@/features/sources/SourcePageDialog";
@@ -124,12 +125,12 @@ export function QuizPage() {
               <div className="flex items-start gap-3">
                 <span className={`grid size-8 shrink-0 place-items-center rounded-full ${item.correct ? "bg-secondary text-primary" : "bg-destructive/10 text-destructive"}`}>{item.correct ? <Check aria-hidden="true" className="size-4" /> : <X aria-hidden="true" className="size-4" />}</span>
                 <div className="min-w-0 flex-1">
-                  <p className="font-semibold">{item.index + 1}. {quiz.questions[item.index]?.question}</p>
+                  <p className="font-semibold">{item.index + 1}. <InlineCodeText>{quiz.questions[item.index]?.question ?? ""}</InlineCodeText></p>
                   <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                    <div className={`rounded-xl p-3 ${item.correct ? "bg-secondary/55" : "bg-destructive/5"}`}><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Jawabanmu</p><p className="mt-1 text-sm font-medium leading-5">{item.chosen === null ? "Tidak dijawab" : quiz.questions[item.index]?.options[item.chosen] ?? "Pilihan tidak tersedia"}</p></div>
-                    <div className="rounded-xl bg-secondary/45 p-3"><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Jawaban tepat</p><p className="mt-1 text-sm font-medium leading-5">{quiz.questions[item.index]?.options[item.correctIndex] ?? "Belum tersedia"}</p></div>
+                    <div className={`rounded-xl p-3 ${item.correct ? "bg-secondary/55" : "bg-destructive/5"}`}><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Jawabanmu</p><p className="mt-1 text-sm font-medium leading-5"><InlineCodeText>{item.chosen === null ? "Tidak dijawab" : quiz.questions[item.index]?.options[item.chosen] ?? "Pilihan tidak tersedia"}</InlineCodeText></p></div>
+                    <div className="rounded-xl bg-secondary/45 p-3"><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Jawaban tepat</p><p className="mt-1 text-sm font-medium leading-5"><InlineCodeText>{quiz.questions[item.index]?.options[item.correctIndex] ?? "Belum tersedia"}</InlineCodeText></p></div>
                   </div>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.explanation}</p>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground"><InlineCodeText>{item.explanation}</InlineCodeText></p>
                   <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     <span className="rounded-full bg-muted px-2.5 py-1">Materi: {item.sourceTitle}{item.page ? ` · hlm. ${item.page}` : ""}</span>
                     <SourcePageDialog notebookId={notebookId} page={item.page} sourceId={item.sourceId} sourceTitle={item.sourceTitle} />
@@ -167,7 +168,7 @@ export function QuizPage() {
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Topik · {currentQuestion.topic}</p>
             <p className="text-xs font-medium text-muted-foreground">{completeCount} soal tersimpan</p>
           </div>
-          <h1 className="mt-2 text-xl font-bold leading-8 text-navy outline-none sm:text-2xl" id="quiz-question" ref={questionHeading} tabIndex={-1}>{currentQuestion.question}</h1>
+          <h1 className="mt-2 text-xl font-bold leading-8 text-navy outline-none sm:text-2xl" id="quiz-question" ref={questionHeading} tabIndex={-1}><InlineCodeText>{currentQuestion.question}</InlineCodeText></h1>
           <fieldset className="mt-5 grid gap-3 sm:grid-cols-2" disabled={submitQuiz.isPending}>
             <legend className="sr-only">Pilih jawaban</legend>
             {currentQuestion.options.map((option, index) => (
@@ -178,7 +179,7 @@ export function QuizPage() {
                   return next;
                 })} type="radio" value={index} />
                 <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-lg bg-white/80 text-xs font-extrabold text-navy">{String.fromCharCode(65 + index)}</span>
-                <span className="text-sm font-medium leading-6">{option}</span>
+                <span className="text-sm font-medium leading-6"><InlineCodeText>{option}</InlineCodeText></span>
               </label>
             ))}
           </fieldset>

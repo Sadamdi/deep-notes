@@ -323,7 +323,7 @@ test("quiz navigation changes questions and preserves answers when going back", 
   test.setTimeout(90_000);
   let submittedAnswers: unknown;
   const questions = [
-    { question: "Soal kuis pertama?", options: ["1A", "1B", "1C", "1D"], topic: "String" },
+    { question: "Apa fungsi `equals()`?", options: ["1A", "1B (`==`)", "1C", "1D"], topic: "String" },
     { question: "Soal kuis kedua?", options: ["2A", "2B", "2C", "2D"], topic: "String" },
     { question: "Soal kuis ketiga?", options: ["3A", "3B", "3C", "3D"], topic: "String" },
   ];
@@ -342,13 +342,15 @@ test("quiz navigation changes questions and preserves answers when going back", 
   });
 
   await page.goto(`/workspaces/${notebookId}/quizzes/${quizId}`);
-  await expect(page.getByRole("heading", { name: "Soal kuis pertama?" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Apa fungsi equals()?" })).toBeVisible();
+  await expect(page.locator("#quiz-question code")).toHaveText("equals()");
+  await expect(page.locator("fieldset code")).toHaveText("==");
   await page.getByRole("radio", { name: "1B" }).check();
   await page.getByRole("button", { name: "Selanjutnya" }).click();
   await expect(page.getByRole("heading", { name: "Soal kuis kedua?" })).toBeVisible();
   await page.getByRole("radio", { name: "2C" }).check();
   await page.getByRole("button", { name: "Sebelumnya" }).click();
-  await expect(page.getByRole("heading", { name: "Soal kuis pertama?" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Apa fungsi equals()?" })).toBeVisible();
   await expect(page.getByRole("radio", { name: "1B" })).toBeChecked();
   await page.getByRole("button", { name: "Selanjutnya" }).click();
   await expect(page.getByRole("heading", { name: "Soal kuis kedua?" })).toBeVisible();

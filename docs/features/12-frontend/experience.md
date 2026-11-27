@@ -32,6 +32,8 @@ Shared loading states place Bubi beside the action label for page reads, source 
 
 Round and session summaries separate full-correct counts, partial credit, points, and speed bonuses. Quiz review displays the learner's choice, correct option, explanation, and source citation.
 
+Quiz prompts, choices, and answer review render Markdown inline-code spans as semantic code text instead of exposing the delimiter characters.
+
 The game and quiz question surfaces follow the Figma navy arena and use the existing palette for answer choices. Screen transitions and button press feedback are optional motion. The live scoreboard remains adjacent to the active question on wider screens and moves below it on narrow screens.
 
 Streak art on Home and Profile uses the existing SVG tier exports. After finishing a session, the frontend compares the current server stats with the server's finish response; only a confirmed increase queues one celebration for that UTC day. The streak count remains visible as text, and reduced-motion users keep the updated count and announcement without movement. A repeated session on the same day does not trigger a new celebration.

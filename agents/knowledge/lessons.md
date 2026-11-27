@@ -62,3 +62,7 @@ Compare fresh pre-finish stats with the completed session response before celebr
 ## [game] Versi scoring item pasangan harus tersimpan di ronde agar soal baru mendapat poi
 Versi scoring item pasangan harus tersimpan di ronde agar soal baru mendapat poin proporsional tanpa mengubah penilaian ronde lama. Uji pointer drag dan keyboard drag secara terpisah.
 (dicatat 2026-11-27)
+
+## [frontend] Quiz content from AI may use Markdown code spans; render those spans semanticall
+Quiz content from AI may use Markdown code spans; render those spans semantically so programming terms stay readable without exposing delimiters.
+(dicatat 2026-11-27)

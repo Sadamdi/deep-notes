@@ -24,3 +24,31 @@ jobs:
       - run: pnpm type-check
       - run: pnpm test
       - run: pnpm build
+
+  # On main only, after the checks pass: publish the built backend. The demo server picks it up by itself
+  # (scripts/server-update.sh), so no server credential is stored on GitHub.
+  release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @deep-notes/backend build
+      - name: Package the backend
+        run: |
+          bash scripts/package-backend.sh backend.tgz
+          echo "$GITHUB_SHA $(sha256sum backend.tgz | cut -d' ' -f1)" > manifest.txt
+      - name: Publish to the backend-latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view backend-latest >/dev/null 2>&1 || gh release create backend-latest --prerelease --target "$GITHUB_SHA" --title "Backend (latest main)" --notes "Built backend for the demo server. Replaced on every push to main."
+          gh release upload backend-latest backend.tgz manifest.txt --clobber

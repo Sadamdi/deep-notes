@@ -25,19 +25,11 @@ pnpm install --frozen-lockfile
 pnpm --filter @deep-notes/backend test
 pnpm --filter @deep-notes/backend build
 
-STAGE="$(mktemp -d)"
-trap 'rm -rf "$STAGE"' EXIT
-cp -r backend/dist "$STAGE/dist"
-cp -r backend/migrations "$STAGE/migrations"
-node -e '
-const p = require("./backend/package.json");
-delete p.dependencies["@deep-notes/shared"];
-require("fs").writeFileSync(process.argv[1] + "/package.json", JSON.stringify({ name: "deepnotes-api", private: true, type: "module", dependencies: p.dependencies }, null, 1));
-' "$STAGE"
-tar czf "$STAGE.tgz" -C "$STAGE" dist migrations package.json
+ARCHIVE="$(mktemp)"
+trap 'rm -f "$ARCHIVE"' EXIT
+bash scripts/package-backend.sh "$ARCHIVE"
 
-"${SCP[@]}" "$STAGE.tgz" "$HOST:/tmp/deepnotes-release.tgz"
-rm -f "$STAGE.tgz"
+"${SCP[@]}" "$ARCHIVE" "$HOST:/tmp/deepnotes-release.tgz"
 
 "${SSH[@]}" bash -s <<REMOTE
 set -euo pipefail

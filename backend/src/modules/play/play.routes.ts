@@ -181,6 +181,18 @@ playRoutes.post(
     const dup = await db.query("SELECT 1 FROM session_answers WHERE session_id = $1 AND user_id = $2 AND round_index = $3", [s.id, req.user!.id, n]);
     if (dup.length) throw new AppError("CONFLICT", "You already answered this round");
 
+    for (const [i, item] of round.items.entries()) {
+      if (item.type !== "match" || item.scoring !== "proportional") continue;
+      const answer = body.answers[i];
+      const selected = Array.isArray(answer) ? answer.filter((right) => right !== -1) : [];
+      const valid = Array.isArray(answer)
+        && answer.length === item.lefts.length
+        && answer.every((right) => typeof right === "number" && Number.isInteger(right) && right >= -1 && right < item.rights.length)
+        && selected.length > 0
+        && new Set(selected).size === selected.length;
+      if (!valid) throw new AppError("VALIDATION", "Choose at least one pair and use each definition only once");
+    }
+
     let fractionSum = 0;
     let points = 0;
     const results = [];
@@ -195,12 +207,13 @@ playRoutes.post(
       } else {
         const g = gradeItem(item, answer);
         fractionSum += g.fraction;
-        points += g.correct ? 100 : 0;
-        results.push({ index: i, type: item.type, correct: g.correct, fraction: g.fraction, correctAnswer: g.correctAnswer, explanation: item.explanation, topic: item.topic, ref: item.ref });
+        points += Math.round(g.fraction * 100);
+        results.push({ index: i, type: item.type, correct: g.correct, fraction: g.fraction, correctAnswer: g.correctAnswer, chosenAnswer: answer, explanation: item.explanation, topic: item.topic, ref: item.ref });
       }
     }
     const correctCount = results.filter((r) => r.correct).length;
-    points += Math.round(speedBonus(body.elapsedMs, round.timeLimitSec) * (fractionSum / round.items.length));
+    const speedBonusPoints = Math.round(speedBonus(body.elapsedMs, round.timeLimitSec) * (fractionSum / round.items.length));
+    points += speedBonusPoints;
     await db.query(
       "INSERT INTO session_answers(session_id, user_id, round_index, results, correct_count, total, points, elapsed_ms) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)",
       [s.id, req.user!.id, n, JSON.stringify(results), correctCount, round.items.length, points, body.elapsedMs ?? null],
@@ -208,7 +221,7 @@ playRoutes.post(
     await db.query("UPDATE session_participants SET score = score + $1 WHERE session_id = $2 AND user_id = $3", [points, s.id, req.user!.id]);
     const ratio = correctCount / round.items.length;
     const reaction = ratio === 1 ? REACTION_FOR_EVENT.quiz_perfect : ratio >= 0.5 ? REACTION_FOR_EVENT.quiz_correct : REACTION_FOR_EVENT.quiz_wrong;
-    res.status(201).json(ok({ roundIndex: n, results, correctCount, total: round.items.length, points, reaction, scoreboard: await participants(s.id) }));
+    res.status(201).json(ok({ roundIndex: n, results, correctCount, total: round.items.length, points, speedBonusPoints, reaction, scoreboard: await participants(s.id) }));
   }),
 );
 
@@ -233,14 +246,15 @@ playRoutes.post(
     const me = await db.query<{ finished: boolean; score: number }>("SELECT finished, score FROM session_participants WHERE session_id = $1 AND user_id = $2", [s.id, req.user!.id]);
     if (!me[0]) throw new AppError("FORBIDDEN", "You are not a player in this session");
     if (s.status !== "running" && !me[0].finished) throw new AppError("CONFLICT", "The session is not running");
-    const answers = await db.query<{ round_index: number; results: Array<{ correct: boolean; topic: string; ref: { sourceTitle: string; page: number | null } }>; correct_count: number; total: number; elapsed_ms: number | null }>(
+    const answers = await db.query<{ round_index: number; results: Array<{ correct: boolean; fraction?: number; topic: string; ref: { sourceTitle: string; page: number | null } }>; correct_count: number; total: number; elapsed_ms: number | null }>(
       "SELECT round_index, results, correct_count, total, elapsed_ms FROM session_answers WHERE session_id = $1 AND user_id = $2 ORDER BY round_index",
       [s.id, req.user!.id],
     );
     if (!answers.length) throw new AppError("CONFLICT", "Answer at least one round before finishing");
     const total = answers.reduce((a, r) => a + r.total, 0);
     const correct = answers.reduce((a, r) => a + r.correct_count, 0);
-    const accuracy = total ? correct / total : 0;
+    const earnedFractions = answers.reduce((sum, round) => sum + round.results.reduce((roundSum, result) => roundSum + (result.fraction ?? (result.correct ? 1 : 0)), 0), 0);
+    const accuracy = total ? earnedFractions / total : 0;
     const speed = answers.filter((a) => a.elapsed_ms !== null).map((a) => a.elapsed_ms! / (s.plan[a.round_index]!.timeLimitSec * 1000));
     const avgSpeedRatio = speed.length ? speed.reduce((a, b) => a + b, 0) / speed.length : null;
 

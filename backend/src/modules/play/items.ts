@@ -11,7 +11,7 @@ export type GameItem = { topic: string; ref: ItemRef; explanation: string; promp
   | { type: "fill"; accept: string[] }
   | { type: "tf"; answer: boolean }
   | { type: "order"; steps: Array<{ id: number; text: string }>; answerOrder: number[] }
-  | { type: "match"; lefts: string[]; rights: string[]; answerRights: number[] }
+  | { type: "match"; lefts: string[]; rights: string[]; answerRights: number[]; scoring?: "proportional" }
   | { type: "guess_page"; options: Array<{ sourceId: string; sourceTitle: string; page: number | null }>; answerIndex: number }
   | { type: "teach" }
 );
@@ -95,7 +95,7 @@ async function genMatch(ps: Passage[]): Promise<GameItem[]> {
     const rights = it.pairs.map((x) => x.right.trim());
     if (!p || new Set(lefts.map(norm)).size !== lefts.length || new Set(rights.map(norm)).size !== rights.length) continue;
     const order = shuffle(rights.map((_, i) => i)); // order[k] = original index shown at position k
-    out.push({ type: "match", prompt: it.prompt, lefts, rights: order.map((i) => rights[i]!), answerRights: lefts.map((_, li) => order.indexOf(li)), explanation: it.explanation, topic: it.topic, ref: refOf(p) });
+    out.push({ type: "match", prompt: it.prompt, lefts, rights: order.map((i) => rights[i]!), answerRights: lefts.map((_, li) => order.indexOf(li)), scoring: "proportional", explanation: it.explanation, topic: it.topic, ref: refOf(p) });
   }
   return out;
 }
@@ -181,7 +181,7 @@ export function toPublic(item: GameItem): PublicItem {
     case "order":
       return { type: "order", prompt: item.prompt, steps: item.steps, topic: item.topic };
     case "match":
-      return { type: "match", prompt: item.prompt, lefts: item.lefts, rights: item.rights, topic: item.topic };
+      return { type: "match", prompt: item.prompt, lefts: item.lefts, rights: item.rights, topic: item.topic, scoring: item.scoring };
     case "guess_page":
       return { type: "guess_page", prompt: item.prompt, options: item.options.map((o) => ({ sourceTitle: o.sourceTitle, page: o.page })), topic: item.topic };
     case "teach":
@@ -192,7 +192,7 @@ export function toPublic(item: GameItem): PublicItem {
 // ---- grading -------------------------------------------------------------------------------------------
 export interface ItemGrade {
   correct: boolean;
-  /** 0 to 1; only teach items can be partial */
+  /** Score fraction from 0 to 1; new matching items and teach-back can award partial credit. */
   fraction: number;
   correctAnswer: unknown;
 }
@@ -218,7 +218,11 @@ export function gradeItem(item: Exclude<GameItem, { type: "teach" }>, answer: un
     }
     case "match": {
       const ok = sameArray(answer, item.answerRights);
-      return { correct: ok, fraction: ok ? 1 : 0, correctAnswer: item.answerRights };
+      const matched = Array.isArray(answer)
+        ? answer.reduce((count, value, index) => count + (Number(value) === item.answerRights[index] ? 1 : 0), 0)
+        : 0;
+      const fraction = item.scoring === "proportional" && item.answerRights.length > 0 ? matched / item.answerRights.length : ok ? 1 : 0;
+      return { correct: ok, fraction, correctAnswer: item.answerRights };
     }
   }
 }

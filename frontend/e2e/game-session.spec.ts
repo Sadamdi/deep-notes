@@ -48,7 +48,7 @@ function envelope(data: unknown, status = 200) {
   return { status, contentType: "application/json", body: JSON.stringify({ success: true, data }) };
 }
 
-async function mockApi(page: Page, calls: { memberBody?: unknown; inviteBody?: unknown; answerBody?: unknown }, mode: "duel" | "group" = "duel", playerCount = 2) {
+async function mockApi(page: Page, calls: { memberBody?: unknown; inviteBody?: unknown; answerBody?: unknown; delayStart?: boolean }, mode: "duel" | "group" = "duel", playerCount = 2) {
   let started = false;
   let answered = false;
   await page.route("**/api/v1/**", async (route: Route) => {
@@ -75,7 +75,11 @@ async function mockApi(page: Page, calls: { memberBody?: unknown; inviteBody?: u
       calls.inviteBody = request.postDataJSON();
       return route.fulfill(envelope({ token: "invite-token", role: "viewer", expiresInDays: 7, maxUses: 20 }, 201));
     }
-    if (pathname === `${base}/start` && method === "POST") { started = true; return route.fulfill(envelope(runningSession(mode, playerCount))); }
+    if (pathname === `${base}/start` && method === "POST") {
+      if (calls.delayStart) await new Promise((resolve) => setTimeout(resolve, 500));
+      started = true;
+      return route.fulfill(envelope(runningSession(mode, playerCount)));
+    }
     if (pathname === base && method === "GET") return route.fulfill(envelope(started ? { ...runningSession(mode, playerCount), answeredRounds: answered ? [0] : [] } : waitingSession(mode, playerCount)));
     if (pathname === `${base}/rounds/0/answer` && method === "POST") {
       calls.answerBody = request.postDataJSON();
@@ -100,7 +104,7 @@ async function mockApi(page: Page, calls: { memberBody?: unknown; inviteBody?: u
 
 test("workspace owner invites a friend with a viewer role and finishes a duel round", async ({ page }) => {
   test.setTimeout(90_000);
-  const calls: { memberBody?: unknown; inviteBody?: unknown; answerBody?: unknown } = {};
+  const calls: { memberBody?: unknown; inviteBody?: unknown; answerBody?: unknown; delayStart?: boolean } = { delayStart: true };
   await mockApi(page, calls);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto(`/workspaces/${notebookId}/sessions/${sessionId}`);
@@ -121,6 +125,9 @@ test("workspace owner invites a friend with a viewer role and finishes a duel ro
   await page.getByRole("button", { name: "Tutup dialog" }).click();
 
   await page.getByRole("button", { name: "Mulai sesi" }).click();
+  const loadingStatus = page.getByRole("status").filter({ hasText: "Bubi sedang memulai sesi…" });
+  await expect(loadingStatus).toBeVisible();
+  await expect.poll(() => loadingStatus.locator(".bubi-mascot-motion__pose").evaluate((element) => getComputedStyle(element).animationName)).toBe("none");
   await expect(page.getByRole("heading", { name: "Apa perangkat pusat pada topologi bintang?" })).toBeVisible();
   const correctChoice = page.getByRole("radio", { name: "Switch pusat" });
   await correctChoice.focus();
@@ -143,8 +150,43 @@ test("group session shows its 12 player capacity and live scoreboard", async ({ 
   await expect(page.getByRole("heading", { name: "Pemain (12/12)" })).toBeVisible();
   await page.getByRole("button", { name: "Mulai sesi" }).click();
   await expect(page.getByRole("heading", { name: "Apa perangkat pusat pada topologi bintang?" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Papan skor langsung" })).toBeVisible();
-  await expect(page.getByText("Pemain 12 · 0 poin")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Papan skor" })).toBeVisible();
+  const twelfthPlayer = page.getByRole("listitem").filter({ hasText: "Pemain 12" });
+  await expect(twelfthPlayer).toContainText("0");
+});
+
+test("quiz creation keeps Bubi loading inside the action button", async ({ page }) => {
+  const source = { id: "7a0129a7-d38c-41aa-a1d5-a31241d80c45", title: "Modul Struktur Data", kind: "pdf", status: "ready", error: null, pageCount: 8, origin: null, createdAt: new Date().toISOString(), uploadedBy: hostId, uploadedByName: "Maul", chunkCount: 8 };
+  await page.route("**/api/v1/**", async (route: Route) => {
+    const request = route.request();
+    const pathname = new URL(request.url()).pathname;
+    if (pathname === "/api/v1/auth/me") return route.fulfill(envelope({ id: hostId, email: "maul@example.com", name: "Maul", course: "Informatika" }));
+    if (pathname === `/api/v1/notebooks/${notebookId}`) return route.fulfill(envelope({ id: notebookId, title: "Belajar Struktur Data", course: "Informatika", description: null, category: null, visibility: "private", ownerId: hostId, role: "owner", createdAt: new Date().toISOString() }));
+    if (pathname === `/api/v1/notebooks/${notebookId}/sources`) return route.fulfill(envelope([source]));
+    if (pathname === `/api/v1/notebooks/${notebookId}/sessions`) return route.fulfill(envelope([]));
+    if (pathname === `/api/v1/notebooks/${notebookId}/quizzes` && request.method() === "GET") return route.fulfill(envelope([]));
+    if (pathname === `/api/v1/notebooks/${notebookId}/quizzes` && request.method() === "POST") {
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      return route.fulfill(envelope({ id: quizId }, 201));
+    }
+    return route.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ success: false, error: { code: "NOT_FOUND", message: `No mock for ${request.method()} ${pathname}` } }) });
+  });
+
+  await page.goto(`/game/${notebookId}`);
+  await expect(page.getByRole("heading", { name: "Pilih cara berlatih" })).toBeVisible();
+  const form = page.locator("form").filter({ has: page.getByLabel("Jumlah soal") });
+  const button = form.locator('button[type="submit"]');
+  await button.click();
+  const loadingStatus = form.getByRole("status").filter({ hasText: "Bubi sedang menyusun kuis…" });
+  await expect(loadingStatus).toBeVisible();
+  await expect(button).toHaveAttribute("aria-busy", "true");
+  await expect(form.getByText("Menyiapkan…")).toHaveCount(0);
+  await expect.poll(async () => {
+    const buttonBox = await button.boundingBox();
+    const loadingBox = await loadingStatus.boundingBox();
+    return Boolean(buttonBox && loadingBox && loadingBox.y >= buttonBox.y && loadingBox.y + loadingBox.height <= buttonBox.y + buttonBox.height);
+  }).toBe(true);
+  await expect(page).toHaveURL(new RegExp(`/game/${notebookId}/quizzes/${quizId}`));
 });
 
 test("student can send a friend request from the friends page", async ({ page }) => {
@@ -244,7 +286,10 @@ test("advances through every game type while a stale session poll is pending", a
       await choice.press("Space");
     }
     if (round.type === "order") await page.getByRole("button", { name: "Pindahkan langkah 2 ke atas" }).click();
-    if (round.type === "match") await page.getByLabel("Pasangan untuk Stack").selectOption("0");
+    if (round.type === "match") {
+      await page.getByRole("combobox", { name: "Pasangan untuk Stack" }).click();
+      await page.getByRole("option", { name: "LIFO" }).click();
+    }
     if (round.type === "guess_page") {
       const choice = page.getByRole("radio", { name: /Modul Java/ });
       await choice.focus();
@@ -260,7 +305,7 @@ test("advances through every game type while a stale session poll is pending", a
     if (round.index === 0) {
       await stalePollStarted;
       await page.getByRole("button", { name: "Lanjut ronde 2" }).click();
-      await expect(page.getByRole("heading", { name: "Ronde kedua" })).toBeVisible();
+      await expect(page.getByText("Ronde kedua", { exact: true })).toBeVisible();
       releaseStalePoll();
       await page.reload();
       await expect(page.getByRole("heading", { name: rounds[1]!.items[0]!.prompt })).toBeVisible();
@@ -314,4 +359,163 @@ test("quiz navigation changes questions and preserves answers when going back", 
   await page.getByRole("button", { name: "Kumpulkan latihan" }).click();
   await expect(page.getByRole("heading", { name: "Sesi selesai!" })).toBeVisible();
   expect(submittedAnswers).toEqual([1, 2, 3]);
+});
+
+test("game round shows one question at a time and confirms a new streak once", async ({ page }) => {
+  test.setTimeout(90_000);
+  let submittedAnswers: unknown;
+  const questions = [
+    { type: "mcq", prompt: "Soal ronde pertama?", options: ["1A", "1B", "1C", "1D"], topic: "String" },
+    { type: "mcq", prompt: "Soal ronde kedua?", options: ["2A", "2B", "2C", "2D"], topic: "String" },
+  ];
+  const round = { index: 0, type: "mcq", topic: "String", timeLimitSec: 120, items: questions, cue: { intro: "Satu soal dulu, lalu lanjut.", introAnimation: "wave", introEmotion: "senang" } };
+  const session = { id: sessionId, hostId, mode: "solo", status: "running", focusTopic: null, roundCount: 1, rounds: [round], answeredRounds: [], participants: [{ userId: hostId, name: "Maul", score: 0, finished: false, roundsAnswered: 0 }], reactions: {} };
+  let finished = false;
+  await page.route("**/api/v1/**", async (route: Route) => {
+    const request = route.request();
+    const pathname = new URL(request.url()).pathname;
+    const method = request.method();
+    if (pathname === "/api/v1/auth/me") return route.fulfill(envelope({ id: hostId, email: "maul@example.com", name: "Maul", course: "Informatika" }));
+    if (pathname === `/api/v1/notebooks/${notebookId}`) return route.fulfill(envelope({ id: notebookId, title: "Belajar Jaringan", course: "Informatika", description: null, category: null, visibility: "private", ownerId: hostId, role: "owner", createdAt: new Date().toISOString() }));
+    if (pathname === `${base}/rounds/0/answer` && method === "POST") {
+      submittedAnswers = request.postDataJSON().answers;
+      return route.fulfill(envelope({ roundIndex: 0, results: questions.map((question, index) => ({ index, type: "mcq", correct: true, fraction: 1, correctAnswer: index, explanation: "Sesuai sumber.", topic: question.topic, ref: { sourceId: "7a0129a7-d38c-41aa-a1d5-a31241d80c45", sourceTitle: "Modul String", page: index + 1 } })), correctCount: 2, total: 2, points: 200, reaction: { animation: "celebrate", emotion: "semangat" }, scoreboard: [] }, 201));
+    }
+    if (pathname === `${base}/finish` && method === "POST") { finished = true; return route.fulfill(envelope({ sessionId, points: 200, accuracyPercent: 100, correct: 2, total: 2, streak: 3, badgesEarned: [], weakTopics: [], recoveryTopics: [], rank: 1, players: 1, reaction: { animation: "celebrate", emotion: "semangat" } })); }
+    if (pathname === "/api/v1/me/stats") {
+      if (method === "GET") return route.fulfill(envelope({ points: 200, streak: finished ? 3 : 2, bestStreak: finished ? 3 : 2, lastPlayDate: finished ? new Date().toISOString() : new Date(Date.now() - 86_400_000).toISOString(), sessionsPlayed: finished ? 2 : 1, playedToday: finished, badges: [], allBadges: [] }));
+    }
+    if (pathname === base && method === "GET") return route.fulfill(envelope(session));
+    if (pathname === "/api/v1/feed") return route.fulfill(envelope({ posts: [], nextBefore: null }));
+    return route.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ success: false, error: { code: "NOT_FOUND", message: `No mock for ${method} ${pathname}` } }) });
+  });
+
+  await page.goto(`/workspaces/${notebookId}/sessions/${sessionId}`);
+  await expect(page.getByRole("heading", { name: "Soal ronde pertama?" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Soal ronde kedua?" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Soal berikutnya" }).click();
+  await expect(page.getByRole("heading", { name: "Soal ronde kedua?" })).toBeVisible();
+  await page.getByRole("button", { name: "Kirim jawaban ronde" }).click();
+  await expect(page.getByRole("heading", { name: "Soal ronde pertama?" })).toBeFocused();
+  await expect(page.getByRole("alert")).toContainText("Soal 1 belum dijawab");
+  const firstChoice = page.getByRole("radio", { name: "1A" });
+  await firstChoice.focus();
+  await firstChoice.press("Space");
+  await page.getByRole("button", { name: "Soal berikutnya" }).click();
+  await expect(page.getByRole("heading", { name: "Soal ronde kedua?" })).toBeVisible();
+  const secondChoice = page.getByRole("radio", { name: "2B" });
+  await secondChoice.focus();
+  await secondChoice.press("Space");
+  await page.getByRole("button", { name: /Buka soal 1/ }).click();
+  await expect(page.getByRole("radio", { name: "1A" })).toBeChecked();
+  await page.getByRole("button", { name: /Buka soal 2/ }).click();
+  await expect(page.getByRole("radio", { name: "2B" })).toBeChecked();
+  await page.getByRole("button", { name: "Kirim jawaban ronde" }).click();
+  await expect(page.getByRole("heading", { name: "2 dari 2 benar" })).toBeVisible();
+  expect(submittedAnswers).toEqual([0, 1]);
+  await page.getByRole("button", { name: "Lihat hasil sesi" }).click();
+  await expect(page.getByRole("heading", { name: "Sesi selesai" })).toBeVisible();
+  await page.goto("/home");
+  const streakCard = page.getByLabel("Streak belajar 3 hari");
+  await expect(streakCard).toHaveAttribute("data-celebrating", "true");
+  await expect(streakCard.getByRole("status")).toContainText("Streak bertambah menjadi 3 hari");
+  await expect(streakCard.locator(".streak-card__mascot")).toHaveCSS("animation-name", "streak-bubi-pop");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(streakCard.locator(".streak-card__mascot")).toHaveCSS("animation-name", "none");
+  await expect(streakCard.getByRole("status")).toContainText("Streak bertambah menjadi 3 hari");
+});
+
+test("match game submits partial pairs and explains the proportional score", async ({ page }) => {
+  test.setTimeout(90_000);
+  let submitted: unknown;
+  const item = { type: "match", prompt: "Pasangkan struktur data dengan urutan pengambilannya.", lefts: ["Queue", "Stack", "Graph", "Tree"], rights: ["FIFO", "LIFO", "Edges", "Root"], topic: "Struktur data", scoring: "proportional" };
+  const round = { index: 0, type: "match", topic: "Struktur data", timeLimitSec: 90, items: [item], cue: { intro: "Coba pasangkan yang kamu tahu.", introAnimation: "think", introEmotion: "idle" } };
+  const session = { id: sessionId, hostId, mode: "solo", status: "running", focusTopic: null, roundCount: 1, rounds: [round], answeredRounds: [], participants: [{ userId: hostId, name: "Maul", score: 0, finished: false, roundsAnswered: 0 }], reactions: {} };
+  await page.route("**/api/v1/**", async (route: Route) => {
+    const request = route.request();
+    const pathname = new URL(request.url()).pathname;
+    if (pathname === "/api/v1/auth/me") return route.fulfill(envelope({ id: hostId, email: "maul@example.com", name: "Maul", course: "Informatika" }));
+    if (pathname === `/api/v1/notebooks/${notebookId}`) return route.fulfill(envelope({ id: notebookId, title: "Belajar Data", course: "Informatika", description: null, category: null, visibility: "private", ownerId: hostId, role: "owner", createdAt: new Date().toISOString() }));
+    if (pathname === base && request.method() === "GET") return route.fulfill(envelope(session));
+    if (pathname === `${base}/rounds/0/answer` && request.method() === "POST") {
+      submitted = request.postDataJSON();
+      return route.fulfill(envelope({
+        roundIndex: 0,
+        results: [{ index: 0, type: "match", correct: false, fraction: 0.5, correctAnswer: [0, 1, 2, 3], chosenAnswer: [0, 1, -1, -1], explanation: "Queue memakai FIFO; stack memakai LIFO.", topic: "Struktur data", ref: { sourceId: "7a0129a7-d38c-41aa-a1d5-a31241d80c45", sourceTitle: "Modul Struktur Data", page: 2 } }],
+        correctCount: 0, total: 1, points: 50, speedBonusPoints: 0,
+        reaction: { animation: "nod", emotion: "senang" }, scoreboard: [],
+      }, 201));
+    }
+    return route.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ success: false, error: { code: "NOT_FOUND", message: `No mock for ${request.method()} ${pathname}` } }) });
+  });
+
+  await page.goto(`/workspaces/${notebookId}/sessions/${sessionId}`);
+  await expect(page.getByRole("heading", { name: item.prompt })).toBeVisible();
+  for (const [term, definition] of [["Queue", "FIFO"], ["Stack", "LIFO"]]) {
+    await page.getByRole("combobox", { name: `Pasangan untuk ${term}` }).click();
+    await page.getByRole("option", { name: definition }).click();
+  }
+  await expect(page.getByText("2 dari 4", { exact: false }).first()).toBeVisible();
+  await page.getByRole("button", { name: "Kirim jawaban" }).click();
+  await expect(page.getByRole("heading", { name: "0 dari 1 benar" })).toBeVisible();
+  await expect(page.getByText("2 dari 4 pasangan tepat")).toBeVisible();
+  await expect(page.getByText("50 poin")).toBeVisible();
+  await expect(page.getByText("Pilihanmu: Belum dipilih").first()).toBeVisible();
+  expect(submitted).toMatchObject({ answers: [[0, 1, -1, -1]] });
+});
+
+test("step ordering supports pointer drag and keyboard controls", async ({ page }) => {
+  test.setTimeout(90_000);
+  let submitted: unknown;
+  const item = { type: "order", prompt: "Susun langkah membuat program.", steps: [{ id: 10, text: "Mulai" }, { id: 20, text: "Proses data" }, { id: 30, text: "Tampilkan hasil" }], topic: "Algoritma" };
+  const round = { index: 0, type: "order", topic: "Algoritma", timeLimitSec: 90, items: [item], cue: { intro: "Urutkan langkahnya.", introAnimation: "think", introEmotion: "idle" } };
+  const session = { id: sessionId, hostId, mode: "solo", status: "running", focusTopic: null, roundCount: 1, rounds: [round], answeredRounds: [], participants: [{ userId: hostId, name: "Maul", score: 0, finished: false, roundsAnswered: 0 }], reactions: {} };
+  await page.route("**/api/v1/**", async (route: Route) => {
+    const request = route.request();
+    const pathname = new URL(request.url()).pathname;
+    if (pathname === "/api/v1/auth/me") return route.fulfill(envelope({ id: hostId, email: "maul@example.com", name: "Maul", course: "Informatika" }));
+    if (pathname === `/api/v1/notebooks/${notebookId}`) return route.fulfill(envelope({ id: notebookId, title: "Belajar Algoritma", course: "Informatika", description: null, category: null, visibility: "private", ownerId: hostId, role: "owner", createdAt: new Date().toISOString() }));
+    if (pathname === base && request.method() === "GET") return route.fulfill(envelope(session));
+    if (pathname === `${base}/rounds/0/answer` && request.method() === "POST") {
+      submitted = request.postDataJSON();
+      return route.fulfill(envelope({ roundIndex: 0, results: [{ index: 0, type: "order", correct: true, fraction: 1, correctAnswer: [20, 30, 10], chosenAnswer: [20, 30, 10], explanation: "Urutan proses sesuai materi.", topic: "Algoritma", ref: { sourceId: "7a0129a7-d38c-41aa-a1d5-a31241d80c45", sourceTitle: "Modul Algoritma", page: 1 } }], correctCount: 1, total: 1, points: 100, speedBonusPoints: 0, reaction: { animation: "nod", emotion: "senang" }, scoreboard: [] }, 201));
+    }
+    return route.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ success: false, error: { code: "NOT_FOUND", message: `No mock for ${request.method()} ${pathname}` } }) });
+  });
+
+  await page.goto(`/workspaces/${notebookId}/sessions/${sessionId}`);
+  const firstStep = page.locator("ol li").nth(0);
+  const secondStep = page.locator("ol li").nth(1);
+  const dragHandle = firstStep.getByRole("button", { name: "Seret langkah 1" });
+  const handleBox = await dragHandle.boundingBox();
+  const secondBox = await secondStep.boundingBox();
+  expect(handleBox).not.toBeNull();
+  expect(secondBox).not.toBeNull();
+  await page.mouse.move(handleBox!.x + handleBox!.width / 2, handleBox!.y + handleBox!.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(handleBox!.x + handleBox!.width / 2 + 2, handleBox!.y + handleBox!.height / 2 + 8);
+  await page.mouse.move(secondBox!.x + 40, secondBox!.y + secondBox!.height * 0.75, { steps: 12 });
+  await page.mouse.up();
+  await expect(page.locator("ol li").nth(0)).toContainText("Proses data");
+  const steps = await page.locator("ol li").allTextContents();
+  expect(steps[0]).toContain("Proses data");
+  expect(steps[1]).toContain("Mulai");
+  const keyboardDragHandle = page.getByRole("button", { name: "Seret langkah 3" });
+  await keyboardDragHandle.focus();
+  await keyboardDragHandle.press("Space");
+  await keyboardDragHandle.press("ArrowUp");
+  await keyboardDragHandle.press("Space");
+  const keyboardDragSteps = await page.locator("ol li").allTextContents();
+  expect(keyboardDragSteps[1]).toContain("Tampilkan hasil");
+  const moveDown = page.getByRole("button", { name: "Pindahkan langkah 2 ke bawah" });
+  await moveDown.focus();
+  await moveDown.press("Enter");
+  const moveUp = page.getByRole("button", { name: "Pindahkan langkah 3 ke atas" });
+  await moveUp.focus();
+  await moveUp.press("Enter");
+  const keyboardSteps = await page.locator("ol li").allTextContents();
+  expect(keyboardSteps[1]).toContain("Tampilkan hasil");
+  await page.getByRole("button", { name: "Kirim jawaban" }).click();
+  await expect(page.getByRole("heading", { name: "1 dari 1 benar" })).toBeVisible();
+  expect(submitted).toMatchObject({ answers: [[20, 30, 10]] });
 });

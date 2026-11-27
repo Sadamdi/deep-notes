@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { BookOpen, LoaderCircle, Sparkles } from "lucide-react";
+import { BookOpen, Sparkles } from "lucide-react";
 import { workspaceAiAssistSchema, type SourceResponse, type WorkspaceAiTask } from "@deep-notes/shared";
 import type { WorkspaceAiAssistResponse } from "@deep-notes/shared";
 import { Button } from "@/components/ui/button";
-import { ErrorState } from "@/components/shared/PageStates";
+import { BubiLoading, ErrorState } from "@/components/shared/PageStates";
 import { SourcePageDialog } from "@/features/sources/SourcePageDialog";
 import { SourceScopePicker } from "@/features/sources/SourceScopePicker";
 import { useSourceScope } from "@/features/sources/useSourceScope";
@@ -69,7 +69,7 @@ export function AiAssistPanel({ notebookId, sources, input, onApply, title = "Mi
     <div className="flex items-start justify-between gap-3"><div><h3 className="font-semibold text-navy">{title}</h3><p className="mt-1 text-xs leading-5 text-muted-foreground">{description}</p></div><Sparkles aria-hidden="true" className="mt-1 size-4 shrink-0 text-teal"/></div>
     {showSourcePicker && <SourceScopePicker onChange={scope.setSourceIds} sourceIds={scope.sourceIds} sources={sources}/>}
     <div className="flex flex-wrap gap-2">
-      {tasks.filter(({ task }) => availableTasks.includes(task)).map(({ task, label }) => <Button disabled={assist.isPending || !readySources || input.trim().length < 3} key={task} onClick={() => run(task)} size="sm" type="button" variant="outline">{assist.isPending ? <LoaderCircle aria-hidden="true" className="animate-spin"/> : null}{label}</Button>)}
+      {tasks.filter(({ task }) => availableTasks.includes(task)).map(({ task, label }) => <Button aria-busy={assist.isPending} disabled={assist.isPending || !readySources || input.trim().length < 3} key={task} onClick={() => run(task)} size="sm" type="button" variant="outline">{assist.isPending ? <BubiLoading label="Bubi sedang membaca…" variant="compact"/> : label}</Button>)}
     </div>
     {validation && <p className="text-sm text-destructive" role="alert">{validation}</p>}
     {assist.isError && <ErrorState message={assist.error instanceof ApiRequestError ? assist.error.message : "Bubi belum berhasil membaca acuan ini."}/>}

@@ -1,10 +1,10 @@
 import { useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router";
-import { ArrowRight, LoaderCircle, Users } from "lucide-react";
+import { ArrowRight, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ErrorState, LoadingState } from "@/components/shared/PageStates";
+import { BubiLoading, ErrorState, LoadingState } from "@/components/shared/PageStates";
 import { ApiRequestError, api, jsonBody } from "@/lib/api";
 
 type JoinResult = { notebookId: string; role: "owner" | "editor" | "viewer" | "existing" };
@@ -29,7 +29,7 @@ export function JoinWorkspacePage() {
         <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">Tautan ini akan menambahkanmu sebagai anggota ruang belajar kelompok.</p>
         {acceptInvite.isPending && <div className="mt-6 w-full"><LoadingState label="Memeriksa undangan…" /></div>}
         {acceptInvite.isError && <div className="mt-6 w-full space-y-4"><ErrorState message={acceptInvite.error instanceof ApiRequestError ? acceptInvite.error.message : "Undangan belum berhasil diterima."} onRetry={() => acceptInvite.mutate()} /><Button asChild><Link to="/workspaces">Lihat workspace saya<ArrowRight aria-hidden="true" /></Link></Button></div>}
-        {!acceptInvite.isPending && !acceptInvite.isError && <p className="mt-5 inline-flex items-center gap-2 text-sm text-muted-foreground"><LoaderCircle aria-hidden="true" className="size-4 animate-spin" />Menyiapkan ruang belajar…</p>}
+        {!acceptInvite.isPending && !acceptInvite.isError && <div className="mt-5"><BubiLoading label="Bubi sedang menyiapkan ruang belajar…" variant="panel"/></div>}
       </Card>
     </div>
   );

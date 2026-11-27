@@ -58,6 +58,7 @@ describe("session planning (automatic game choice)", () => {
     const order = s.rounds[2].items[0];
     expect(order.steps).toHaveLength(3);
     expect(s.rounds[3].items[0].lefts).toHaveLength(4);
+    expect(s.rounds[3].items[0].scoring).toBe("proportional");
   });
 
   it("picks only the requested game types when the player chooses (manual mode)", async () => {
@@ -118,6 +119,42 @@ describe("playing a session: grading, points, streak, badges", () => {
     // finishing twice does not double count
     await u.agent.post(`/api/v1/notebooks/${nb}/sessions/${s.id}/finish`);
     expect((await u.agent.get("/api/v1/me/stats")).body.data.sessionsPlayed).toBe(1);
+  });
+
+  it("awards proportional points for new matching rounds and keeps the full-correct count all-or-nothing", async () => {
+    const u = await signUp(app, "PartialMatcher");
+    const nb = await createNotebookWithSources(u.agent);
+    const s = (await u.agent.post(`/api/v1/notebooks/${nb}/sessions`).send({ gameTypes: ["match"], rounds: 3 })).body.data;
+    const plan = await planOf(s.id);
+    const round = plan[0]!;
+    const item = round.items[0]!;
+    expect(item.type).toBe("match");
+    expect(item.scoring).toBe("proportional");
+    const matchIndex = round.items.findIndex((candidate) => candidate.type === "match");
+    expect(matchIndex).toBeGreaterThanOrEqual(0);
+    const correct = perfect(round)[matchIndex] as number[];
+    expect(correct.length).toBeGreaterThan(1);
+    const partial = [...correct];
+    partial[partial.length - 1] = -1;
+    const url = `/api/v1/notebooks/${nb}/sessions/${s.id}/rounds/0/answer`;
+    const duplicate = [...correct];
+    duplicate[1] = duplicate[0]!;
+    const duplicateAnswers = perfect(round);
+    duplicateAnswers[matchIndex] = duplicate;
+    expect((await u.agent.post(url).send({ answers: duplicateAnswers })).status).toBe(400);
+    const submittedAnswers = perfect(round);
+    submittedAnswers[matchIndex] = partial;
+    const played = await u.agent.post(url).send({ answers: submittedAnswers, elapsedMs: 3_600_000 });
+    expect(played.status).toBe(201);
+    const matched = correct.length - 1;
+    const fraction = matched / correct.length;
+    const expectedCorrectCount = round.items.length - 1;
+    const expectedPoints = expectedCorrectCount * 100 + Math.round(100 * fraction);
+    expect(played.body.data).toMatchObject({ correctCount: expectedCorrectCount, total: round.items.length, points: expectedPoints, speedBonusPoints: 0 });
+    expect(played.body.data.results[matchIndex]).toMatchObject({ correct: false, fraction, chosenAnswer: partial, correctAnswer: correct });
+    const result = (await u.agent.post(`/api/v1/notebooks/${nb}/sessions/${s.id}/finish`)).body.data;
+    const expectedAccuracy = (expectedCorrectCount + fraction) / round.items.length;
+    expect(result).toMatchObject({ correct: expectedCorrectCount, total: round.items.length, accuracyPercent: Math.round(expectedAccuracy * 100), points: expectedPoints });
   });
 
   it("marks wrong answers, reports weak topics with the page to review, and rejects repeats and bad shapes", async () => {
@@ -247,6 +284,10 @@ describe("grading rules", () => {
     const match = { type: "match", prompt: "x", lefts: ["a", "b"], rights: ["y", "x"], answerRights: [1, 0], explanation: "", topic: "t", ref: { sourceId: "s", sourceTitle: "S", page: null } } as const;
     expect(gradeItem(match as unknown as GradeArg, [1, 0]).correct).toBe(true);
     expect(gradeItem(match as unknown as GradeArg, [0, 1]).correct).toBe(false);
+    const proportional = { ...match, scoring: "proportional" as const };
+    expect(gradeItem(proportional as unknown as GradeArg, [1, -1])).toMatchObject({ correct: false, fraction: 0.5 });
+    expect(gradeItem(proportional as unknown as GradeArg, [-1, -1])).toMatchObject({ correct: false, fraction: 0 });
+    expect(gradeItem(match as unknown as GradeArg, [1, -1])).toMatchObject({ correct: false, fraction: 0 });
   });
 });
 

@@ -11,5 +11,5 @@ describe("embedded database", () => {
     expect(await db.query("SELECT 1 AS ok")).toEqual([{ ok: 1 }]);
     await db.close();
     fs.rmSync(root, { recursive: true, force: true });
-  }, 120_000);
+  }, 300_000); // starting the embedded database takes minutes on a busy Windows machine
 });

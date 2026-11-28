@@ -386,14 +386,14 @@ export const gameRoundResultSchema = z.object({
   roundIndex: z.number().int().nonnegative(),
   results: z.array(z.object({
     index: z.number().int().nonnegative(), type: gameTypeSchema, correct: z.boolean(), fraction: z.number().min(0).max(1),
-    correctAnswer: z.unknown().nullable(), explanation: z.string(), topic: z.string(), ref: itemRefSchema,
+    correctAnswer: z.unknown().nullable(), chosenAnswer: z.unknown().optional(), explanation: z.string(), topic: z.string(), ref: itemRefSchema,
     teach: z.object({
       checkable: z.boolean(), understood: z.enum(["yes", "partly", "not_yet"]), score: z.number().int().min(0).max(100),
       covered: z.array(z.string()), missing: z.array(z.string()), wrong: z.array(z.string()), reply: z.string(),
       animation: animationSchema, emotion: emotionSchema, citations: z.array(citationSchema),
     }).optional(),
   })),
-  correctCount: z.number().int().nonnegative(), total: z.number().int().positive(), points: z.number().int().nonnegative(),
+  correctCount: z.number().int().nonnegative(), total: z.number().int().positive(), points: z.number().int().nonnegative(), speedBonusPoints: z.number().int().nonnegative().optional(),
   reaction: z.object({ animation: animationSchema, emotion: emotionSchema }),
   scoreboard: z.array(z.object({ userId: z.string().uuid(), name: z.string(), score: z.number().int().nonnegative(), finished: z.boolean(), roundsAnswered: z.number().int().nonnegative() })),
 });

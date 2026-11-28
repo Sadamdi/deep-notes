@@ -30,14 +30,14 @@ POST /notebooks/:id/sessions/:sid/finish
 | `fill` | `prompt` berisi `____`, `firstLetter`, `length` | teks; tidak peka huruf besar, tanda baca, dan aksen |
 | `tf` | `prompt` (pernyataan) | `true` atau `false` |
 | `order` | `prompt`, `steps: [{id, text}]` (sudah diacak) | array `id` dalam urutan pilihan pemain |
-| `match` | `lefts[]`, `rights[]` (diacak) | array: untuk tiap `lefts[i]`, indeks pasangannya di `rights` |
+| `match` | `lefts[]`, `rights[]` (diacak), `scoring?: "proportional"` | array: untuk tiap `lefts[i]`, indeks pasangannya di `rights`; `-1` berarti dikosongkan |
 | `guess_page` | `prompt` (kutipan), `options[4]` `{sourceTitle, page}` | indeks 0 sampai 3 |
 | `teach` | `prompt`, `topic` | teks penjelasan pemain (10 sampai 4000 karakter) |
 
-Hasil per item: `{ index, type, correct, fraction, correctAnswer, explanation, topic, ref: {sourceId, sourceTitle, page} }`. `ref` dipakai untuk tombol "buka halaman asal". Untuk `teach` ada juga `teach: { understood, score, covered[], missing[], wrong[], reply, animation, emotion, citations[] }`.
+Hasil per item: `{ index, type, correct, fraction, correctAnswer, chosenAnswer?, explanation, topic, ref: {sourceId, sourceTitle, page} }`. `ref` dipakai untuk tombol "buka halaman asal". `correct` hanya true bila seluruh jawaban item tepat; `fraction` menjadi nilai 0–1 untuk poin dan akurasi. Item pasangan baru menandai `scoring: "proportional"`: setiap pasangan tepat menyumbang bagian yang sama, sementara pasangan yang kosong atau salah bernilai 0. Pemain harus memilih setidaknya satu pasangan; pilihan definisi yang sudah dipakai tidak dapat dipilih lagi. Item sesi lama tanpa penanda tetap dinilai benar penuh atau 0. `chosenAnswer` opsional agar UI dapat menjelaskan pilihan pemain tanpa memecahkan hasil sesi lama. Untuk `teach` ada juga `teach: { understood, score, covered[], missing[], wrong[], reply, animation, emotion, citations[] }`.
 
 ## 4. Poin, streak, lencana
-- Tiap jawaban benar 100 poin; `teach` memberi sampai 200 poin menurut skor. Bonus kecepatan sampai 50 poin per ronde bila `elapsedMs` dikirim (makin cepat makin besar, sebanding dengan akurasi).
+- Tiap item bernilai sampai 100 poin; `teach` memberi sampai 200 poin menurut skor. Pasangan baru memberi poin secara proporsional. Bonus kecepatan sampai 50 poin per ronde bila `elapsedMs` dikirim (makin cepat makin besar, sebanding dengan nilai pecahan ronde); respons mengirim `speedBonusPoints` untuk ditampilkan terpisah. `correctCount` dan `correct` tetap menghitung item yang benar sepenuhnya, sedangkan `accuracyPercent` akhir juga memasukkan nilai parsial.
 - **Streak:** hari berturut-turut ada sesi yang diselesaikan (UTC). `GET /me/stats` mengembalikan `streak` 0 bila kemarin dan hari ini tidak main.
 - **Lencana:** `first_session`, `perfect` (semua benar), `speedster` (rata-rata di bawah separuh waktu dan akurasi minimal 80%), `streak_3`, `streak_7`, `gap_guardian` (misi pemulihan dengan akurasi minimal 80%), `teammate` (selesai bersama pemain lain). Daftar nama ada di `GET /me/stats` (`allBadges`).
 - Poin dan streak dihitung sekali per sesi; memanggil `finish` lagi tidak menggandakannya.

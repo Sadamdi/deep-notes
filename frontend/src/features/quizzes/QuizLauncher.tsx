@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
-import { ArrowRight, Brain, LoaderCircle, Sparkles } from "lucide-react";
+import { ArrowRight, Brain, Sparkles } from "lucide-react";
 import { REACTION_FOR_EVENT, generateQuizSchema, type GenerateQuizInput, type QuizCreated, type QuizKind, type SourceResponse } from "@deep-notes/shared";
 import { BubiMascot } from "@/components/shared/BubiMascot";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ErrorState } from "@/components/shared/PageStates";
+import { BubiLoading, ErrorState } from "@/components/shared/PageStates";
 import { ApiRequestError, api, jsonBody } from "@/lib/api";
 import { SourceScopePicker } from "@/features/sources/SourceScopePicker";
 import { useSourceScope } from "@/features/sources/useSourceScope";
@@ -106,9 +106,10 @@ export function QuizLauncher({ notebookId, sources }: { notebookId: string; sour
         </div>
         <SourceScopePicker onChange={scope.setSourceIds} sourceIds={scope.sourceIds} sources={sources}/>
         <div className="grid gap-3 md:grid-cols-[minmax(0,260px)_minmax(0,1fr)] md:items-center">
-        <Button className="w-full" disabled={createQuiz.isPending || readySources.length === 0 || sourceScopeEmpty} type="submit">
-          {createQuiz.isPending ? <LoaderCircle aria-hidden="true" className="animate-spin" /> : <Brain aria-hidden="true" />}
-          {createQuiz.isPending ? "Menyiapkan…" : "Mulai latihan"}<ArrowRight aria-hidden="true" />
+        <Button aria-busy={createQuiz.isPending} className="w-full" disabled={createQuiz.isPending || readySources.length === 0 || sourceScopeEmpty} type="submit">
+          {createQuiz.isPending
+            ? <BubiLoading label="Bubi sedang menyusun kuis…" variant="compact" />
+            : <><Brain aria-hidden="true" />Mulai latihan<ArrowRight aria-hidden="true" /></>}
         </Button>
         <p className="text-xs leading-5 text-muted-foreground">{scope.selectedSourceIds.length} sumber dari acuan terpilih siap digunakan. Kuis memerlukan setidaknya tiga bagian materi yang dapat dibaca.</p>
         </div>

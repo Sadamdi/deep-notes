@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { FilePlus2, Link2, LoaderCircle, Upload } from "lucide-react";
+import { FilePlus2, Link2, Upload } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { SourceAccepted } from "@deep-notes/shared";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { AppDialog } from "@/components/shared/AppDialog";
-import { ErrorState } from "@/components/shared/PageStates";
+import { BubiLoading, ErrorState } from "@/components/shared/PageStates";
 import { sourceKey } from "@/features/notebooks/queries";
 import { ApiRequestError, api, jsonBody } from "@/lib/api";
 
@@ -114,9 +114,8 @@ export function SourceUploader({ notebookId, canUpload }: { notebookId: string; 
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
           <input accept={acceptedFiles} aria-label="Pilih materi untuk diunggah" className="sr-only" multiple onChange={(event) => void uploadFiles(event.target.files)} ref={fileInput} tabIndex={-1} type="file" />
-          <Button disabled={!canUpload || busy} onClick={() => fileInput.current?.click()}>
-            {busy ? <LoaderCircle aria-hidden="true" className="animate-spin" /> : <Upload aria-hidden="true" />}
-            {busy ? "Mengunggah…" : "Pilih file"}
+          <Button aria-busy={busy} disabled={!canUpload || busy} onClick={() => fileInput.current?.click()}>
+            {busy ? <BubiLoading label="Bubi sedang membaca materi…" variant="compact" /> : <><Upload aria-hidden="true" />Pilih file</>}
           </Button>
           <AppDialog
             description="Kami membaca halaman publik dan hanya menyimpan teks yang berhasil diekstrak."

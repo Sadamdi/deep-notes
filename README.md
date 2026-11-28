@@ -21,7 +21,7 @@ Satu kelompok belajar punya satu notebook per mata kuliah. Anggota mengunggah su
 
 AI hadir sebagai **teman belajar atau guru** berbentuk maskot. Backend menulis "naskah penampilan" (apa yang diucapkan, ekspresi, gerakan, dan sumber yang ditampilkan), lalu frontend memainkannya. Teks selalu ada, jadi aplikasi tetap bisa dipakai tanpa suara.
 
-> **Status (24 Nov 2026):** backend F-01 sampai F-17 selesai dan teruji, berjalan di server demo. Frontend dikerjakan terpisah terhadap kontrak API. Rincian jujur ada di [docs/ROADMAP.md](docs/ROADMAP.md).
+> **Status (28 Nov 2026):** web dan backend berjalan di https://deepnotes-app.vercel.app. Reset password belum bisa dipakai (server email belum disetel); duel dan kelompok dengan banyak pemain serta transkripsi audio masih diuji.
 
 ---
 
@@ -47,7 +47,7 @@ Perbandingan jujur dengan NotebookLM: [docs/product/COMPETITIVE_ANALYSIS.md](doc
 ## 🧱 Arsitektur Teknologi
 
 ```
-frontend/  React 19 + TypeScript, Vite, Tailwind CSS v4, shadcn/ui, TanStack Query dan Table, React Hook Form, three.js
+frontend/  React 19 + TypeScript, Vite, Tailwind CSS v4, shadcn/ui, TanStack Query dan Table, React Hook Form
 backend/   Node 22 + TypeScript, Express 5, Zod 4, PostgreSQL + pgvector (node-postgres; PGlite untuk dev dan tes), pino
 shared/    skema Zod yang dipakai kedua sisi: kontrak API dan kontrak maskot
 AI         Gemini 2.5 Flash (utama), endpoint OpenAI-compatible (cadangan), embedding gemini-embedding-001 768 dimensi
@@ -162,4 +162,4 @@ Dokumentasi API interaktif: buka `http://localhost:4000/api/docs` (Swagger UI) a
 ## 👥 Tim
 
 Aku Nak Menang Hackathon: Sulthan Adam Rahmadi (ketua, backend), Maulvi Ilmullah Faturrahman Al Afghani, Alya Nugrahanti, Ulinnuha Mahbubi.
-Penggunaan AI dalam pengerjaan diungkapkan di [docs/AI_DISCLOSURE.md](docs/AI_DISCLOSURE.md).
+Penggunaan AI: **Gemini API** (cadangan Qwen 3.8 Flash lewat proxy) untuk fitur produk, dan **Claude Code** untuk membantu menulis kode, tes, dokumentasi, pengujian, draf proposal, dan video tim. Tim meninjau dan bertanggung jawab atas seluruh hasil. Rincian: [docs/AI_DISCLOSURE.md](docs/AI_DISCLOSURE.md).

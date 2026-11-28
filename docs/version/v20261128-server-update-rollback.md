@@ -59,7 +59,7 @@ No database changes. No migration is applied. The verification uses temporary lo
 - [x] Isolated local API write flows: registered three disposable `example.com` test users in a fresh PGlite database, created a notebook, shared it with a member, saved a private note, discussion post, updated draft, and saved feed post. A non-member could not read the discussion (404), and the shared member could not read the owner's private note.
 - [x] Persistence and login after restart: restarted the isolated backend, logged the test users in again, and confirmed the notebook, note, discussion, updated draft, and saved post remained available.
 - [x] Browser integration through the Vite API proxy: signed in through the local UI, opened the test workspace, created a note and confirmed it after reload, and sent a discussion message. Browser run reported zero API errors.
-- [ ] Authenticated Gemini/Bubi request: not verified. `GEMINI_API_KEYS` is not configured in the local backend. The public demo was only checked with an unauthenticated AI-assist request (401); no write request was sent to the shared demo.
+- [ ] Authenticated Gemini/Bubi response: not verified because the browser test had no signed-in session. The frontend sends `/api/v1` requests through Vite to `https://deepnotes-api.vercel.app`; Gemini credentials belong on that backend and are not needed in the frontend. The demo health route returned 200, while an unauthenticated AI-assist request returned 401, which confirms route/auth behavior only—not a real model response.
 
 ## 7. Rollback
 

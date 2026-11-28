@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router";
+import { BubiMascot } from "@/components/shared/BubiMascot";
 
 function AuthArtwork() {
   return (
@@ -15,6 +16,7 @@ function AuthArtwork() {
         <img className="auth-art-orb-edge" src="/assets/auth-orb-edge.svg" alt="" />
         <img className="auth-art-orb-top" src="/assets/auth-orb-top.svg" alt="" />
         <Link className="auth-art-wordmark" to="/">Deep Notes</Link>
+        <div className="auth-bubi-desktop"><BubiMascot animation="wave" animationKey="auth-desktop" decorative emotion="semangat" /></div>
       </div>
       <img className="auth-art-left-wave" src="/assets/auth-wave-left-edge.svg" alt="" />
       <img className="auth-art-right-wave" src="/assets/auth-wave-right-edge.svg" alt="" />
@@ -34,9 +36,10 @@ export function AuthFrame({ children, description, title }: {
           <AuthArtwork />
         </div>
         <section className="mx-auto flex w-full max-w-[526px] flex-col justify-center px-5 py-8 sm:px-8 xl:px-0 xl:py-0">
-          <Link className="mb-10 text-xl font-extrabold tracking-[-0.06em] text-navy xl:hidden" to="/">
+          <Link className="mb-3 text-xl font-extrabold tracking-[-0.06em] text-navy xl:hidden" to="/">
             Deep Notes
           </Link>
+          <div aria-hidden="true" className="auth-bubi-mobile"><BubiMascot animation="wave" animationKey="auth-mobile" className="h-20 w-auto" decorative emotion="semangat" /></div>
           <header>
             <h1 className="text-[43px] font-bold leading-[1.15] tracking-[-0.035em] text-navy">{title}</h1>
             <p className="mt-2 text-[15px] leading-[26px] text-auth-subtle">{description}</p>

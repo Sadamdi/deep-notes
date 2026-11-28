@@ -14,6 +14,7 @@ import { ApiRequestError } from "@/lib/api";
 import { REACTION_FOR_EVENT, type Citation, type SourceResponse } from "@deep-notes/shared";
 import { BubiMascot } from "@/components/shared/BubiMascot";
 import { InviteWorkspaceDialog } from "@/features/notebooks/InviteWorkspaceDialog";
+import { WorkspaceTabs } from "@/components/shared/WorkspaceTabs";
 
 export function WorkspacePage() {
   const { notebookId = "" } = useParams();
@@ -61,15 +62,7 @@ export function WorkspacePage() {
           <Button asChild><Link to={`/game/${notebookId}`}><Gamepad2 aria-hidden="true" />Mulai game</Link></Button>
         </div>
       </div>
-      <nav aria-label="Bagian workspace" className="flex gap-2 overflow-x-auto border-b pb-3">
-        <span aria-current="page" className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Belajar</span>
-        <Link className="rounded-full px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-foreground" to={`/workspaces/${notebookId}/companion`}>Belajar dengan Bubi</Link>
-        <Link className="rounded-full px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-foreground" to={`/workspaces/${notebookId}/team`}>Ruang kelompok</Link>
-        <Link className="rounded-full px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-foreground" to={`/workspaces/${notebookId}/discussion`}>Diskusi</Link>
-        <Link className="rounded-full px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-foreground" to={`/workspaces/${notebookId}/notes`}>Catatan</Link>
-        <Link className="rounded-full px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-foreground" to={`/workspaces/${notebookId}/class`}>Kelas Bubi</Link>
-        <Link className="rounded-full px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-foreground" to={`/workspaces/${notebookId}/visualization`}>Visualisasi materi</Link>
-      </nav>
+      <WorkspaceTabs notebookId={notebookId} />
 
       {readySourceNotice && <div className="flex items-center gap-3 rounded-2xl bg-secondary/70 p-3" role="status">
         <BubiMascot {...REACTION_FOR_EVENT.new_source_ready} animationKey={readySourceNotice.id} className="h-14 w-auto" decorative />

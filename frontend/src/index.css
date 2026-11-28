@@ -649,6 +649,70 @@
   left: 556px;
 }
 
+.auth-bubi-desktop {
+  position: absolute;
+  z-index: 3;
+  right: 10%;
+  bottom: 7%;
+  display: block;
+  animation: bubi-card-emerge 760ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.auth-bubi-desktop .bubi-mascot-art {
+  height: 240px;
+  width: auto;
+}
+
+.auth-bubi-mobile {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  height: 3.5rem;
+  justify-content: flex-end;
+}
+
+.auth-bubi-mobile .bubi-mascot-motion {
+  transform: translateY(-0.9rem);
+  animation: bubi-card-emerge 760ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.landing-hero {
+  background: var(--auth-panel-gradient);
+}
+
+.landing-bubi {
+  position: absolute;
+  z-index: 1;
+  right: 4%;
+  bottom: -4rem;
+  height: 31rem;
+  width: auto;
+  animation: bubi-card-emerge 800ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.landing-mobile-bubi {
+  opacity: 0.9;
+  transform: translate(0.5rem, 0.5rem);
+}
+
+.landing-mobile-bubi .bubi-mascot-art {
+  animation: bubi-card-emerge 800ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes bubi-card-emerge {
+  from { opacity: 0; transform: translateY(5rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-bubi-desktop,
+  .auth-bubi-mobile .bubi-mascot-motion,
+  .landing-bubi,
+  .landing-mobile-bubi .bubi-mascot-art {
+    animation: none;
+  }
+}
+
 .auth-field-control {
   display: flex;
   height: 61px;

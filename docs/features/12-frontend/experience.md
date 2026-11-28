@@ -7,7 +7,7 @@
 | **Owner** | team |
 | **Endpoints** | Existing endpoints listed in [API_CONTRACT.md](../../API_CONTRACT.md); no new endpoint added |
 | **Schemas** | Existing response schemas in `shared/src/responses.ts` and feature schemas in `shared/src/` |
-| **Last updated** | 2026-11-27 |
+| **Last updated** | 2026-11-28 |
 
 ## Purpose
 
@@ -38,6 +38,12 @@ The game and quiz question surfaces follow the Figma navy arena and use the exis
 
 Streak art on Home and Profile uses the existing SVG tier exports. After finishing a session, the frontend compares the current server stats with the server's finish response; only a confirmed increase queues one celebration for that UTC day. The streak count remains visible as text, and reduced-motion users keep the updated count and announcement without movement. A repeated session on the same day does not trigger a new celebration.
 
+The Home sidebar resumes the first notebook returned by the server, links to its Bubi study route, shows the shared streak card directly below that action, and lists up to three notebooks. If the notebook list is empty it links to workspace creation; if loading fails it offers retry instead of treating the failure as an empty account. It does not invent a lesson percentage or step number.
+
+Workspace, classroom, and visualization routes use the same wrapping tab navigation. Labels stay on one line, tabs keep a shared minimum height, and narrow screens wrap them into additional rows instead of scrolling sideways. The create-workspace card preview reflects title, course, category, description, and visibility from the form; it follows the form action on phones.
+
+Landing and authentication use the existing exported Bubi SVG artwork. The login and registration frame places an animated Bubi inside the clipped illustration panel; the landing page has a larger desktop mascot and a compact mobile mascot. The entrance and wave are decorative, short, and disabled by reduced-motion preferences. Authentication remains email-based because social sign-in is not available in the backend contract.
+
 Routes provide loading, empty, failure, and not-found handling where the API exposes the relevant state. Figma states without an API contract are explained in [API_HANDOFF.md](../../frontend/API_HANDOFF.md).
 
 ## Authorization
@@ -51,6 +57,7 @@ Migration `0005_server_backed_inputs.sql` adds private notes, shared discussion,
 ## Verification
 
 - Backend integration tests cover create/read/update/delete, server-returned state, idempotent imports, invalid requests, unauthenticated access, member access, private-note isolation, and per-account drafts/posts in isolated PGlite.
-- Full workspace lint, type checks, tests, and builds pass. The game/quiz/streak refinement was also verified in isolated desktop and mobile browser flows; no authenticated live AI or demo-server mutations were run for that UI work.
+- Full workspace lint, type checks, tests, and builds pass. `frontend/e2e/design-responsive.spec.ts` passes in desktop and mobile projects and checks 320 px and 390 px layouts, recovery layout, preview updates, tab wrapping, Home destinations and retry/empty states, Bubi overlap, entrance motion, and reduced-motion behavior using deterministic API fixtures. No account or workspace data is changed by those browser checks.
+- Sign In was opened in the local browser at desktop size to inspect Bubi's position in the artwork. The responsive checks are automated measurements rather than pixel-by-pixel screenshots against Figma; the real sign-in, registration, recovery email, live AI, and demo-server writes were not submitted during this visual task.
 - The shared demo OpenAPI document was checked read-only on 2026-11-26; it does not yet include the new routes. No shared database writes were made.
 - The current game/quiz/streak update has separate browser verification recorded in the matching `docs/version/` entry; it does not claim live AI or demo-server verification.

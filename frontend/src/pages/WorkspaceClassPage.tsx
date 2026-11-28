@@ -11,6 +11,7 @@ import { ClassroomScene } from "@/features/visualization/ClassroomScene";
 import { SourcePageDialog } from "@/features/sources/SourcePageDialog";
 import { api } from "@/lib/api";
 import { useAuthMe } from "@/features/auth/useAuth";
+import { WorkspaceTabs } from "@/components/shared/WorkspaceTabs";
 
 export function WorkspaceClassPage() {
   const { notebookId = "" } = useParams();
@@ -43,7 +44,7 @@ export function WorkspaceClassPage() {
   const graph = mindMap.data;
 
   return <div className="space-y-6"><PageTitle eyebrow={notebook.data.title} title="Kelas bersama Bubi" description="Pilih topik di papan tulis, Bubi menunjukkan hubungannya dan halaman rujukannya." action={<Button asChild variant="outline"><Link to={`/workspaces/${notebookId}`}><ArrowLeft aria-hidden="true"/>Kembali ke workspace</Link></Button>}/>
-    <nav aria-label="Bagian workspace" className="flex gap-2 overflow-x-auto pb-1"><Link className="rounded-full bg-secondary px-4 py-2 text-sm font-semibold text-navy" to={`/workspaces/${notebookId}`}>Belajar</Link><Link className="rounded-full px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted" to={`/workspaces/${notebookId}/team`}>Papan kelompok</Link><Link className="rounded-full px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted" to={`/workspaces/${notebookId}/discussion`}>Diskusi</Link><Link className="rounded-full px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted" to={`/workspaces/${notebookId}/notes`}>Catatan</Link><span aria-current="page" className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Kelas Bubi</span><Link className="rounded-full px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted" to={`/workspaces/${notebookId}/visualization`}>Visualisasi materi</Link></nav>
+    <WorkspaceTabs notebookId={notebookId} />
     <section className="space-y-4 rounded-3xl border bg-card p-4 sm:p-6"><div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><h2 className="font-bold text-navy">Papan tulis dari sumbermu</h2><p className="mt-1 text-sm leading-6 text-muted-foreground">Buka sesi hadir agar teman melihat siapa yang sedang berada di kelas.</p></div><div className="flex w-full flex-col gap-2 sm:max-w-sm"><Button disabled={joinClass.isPending || leaveClass.isPending || presence.isPending} onClick={() => isPresent ? leaveClass.mutate() : joinClass.mutate()} variant={isPresent ? "outline" : "default"}>{isPresent ? "Keluar dari kelas" : "Hadir di kelas"}</Button><label className="text-sm font-semibold" htmlFor="class-source">Pilih sumber</label><select className="h-10 w-full rounded-xl border bg-background px-3 text-sm" id="class-source" onChange={(event) => setRequestedSourceId(event.target.value)} value={source?.id ?? ""}><option value="">Pilih sumber yang siap</option>{readySources.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select></div></div>
       {presence.isError && <ErrorState message={presence.error.message} onRetry={() => void presence.refetch()}/>}
       {(joinClass.isError || leaveClass.isError) && <p className="text-sm text-destructive" role="alert">{joinClass.error?.message ?? leaveClass.error?.message}</p>}

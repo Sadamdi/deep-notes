@@ -5,6 +5,7 @@ Every task gets an entry: a `Plan` before code, `Released` after it is merged an
 
 | Version | Date | Type | Title | Status | File |
 |---|---|---|---|---|---|
+| v0.0.23 | 2026-11-28 | Feature / UI | Responsive workspace, auth, and home refresh | In Progress | [v20261128-mobile-auth-home-refresh.md](v20261128-mobile-auth-home-refresh.md) |
 | v0.0.22 | 2026-11-28 | Fix | Restore backend release after staging failure | In Progress | [v20261128-server-update-rollback.md](v20261128-server-update-rollback.md) |
 | v0.0.21 | 2026-11-28 | Fix | Findings from live browser testing | In Progress | [v20261128-live-qa-fixes.md](v20261128-live-qa-fixes.md) |
 | v0.0.20 | 2026-11-27 | Config | Automatic backend updates on the demo server | In Progress | [v20261127-auto-deploy.md](v20261127-auto-deploy.md) |

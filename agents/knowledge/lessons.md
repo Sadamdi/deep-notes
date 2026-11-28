@@ -70,3 +70,7 @@ Quiz content from AI may use Markdown code spans; render those spans semanticall
 ## [deploy] Protect release replacement behind one rollback path because set -e can exit bef
 Protect release replacement behind one rollback path because set -e can exit before an unguarded rollback branch; keep a fault-injection check for copy failures.
 (dicatat 2026-11-28)
+
+## [frontend] At phone widths, a feed card's intrinsic minimum can widen the whole page even w
+At phone widths, a feed card's intrinsic minimum can widen the whole page even when controls use w-full; set min-w-0 on grid children and verify document.scrollWidth at 320px.
+(dicatat 2026-11-28)

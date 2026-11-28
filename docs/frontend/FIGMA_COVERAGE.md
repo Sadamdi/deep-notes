@@ -6,9 +6,9 @@ Reference: [Deep Notes — STACK 2026](https://www.figma.com/design/Agh2OMnizUCn
 
 | Designed family | Frontend route(s) | Coverage |
 |---|---|---|
-| Landing, login, registration, recovery | `/`, `/login`, `/register`, `/recover` | Landing is implemented. Sign In (`223:10101`) and Sign Up (`223:10144`) use the `Design Lagi` frames. Recovery is an explanatory state because no email reset contract exists. |
+| Landing, login, registration, recovery | `/`, `/login`, `/register`, `/recover` | Landing, Sign In (`223:10101`), and Sign Up (`223:10144`) use the `Design Lagi` frames with responsive Bubi artwork. Recovery uses the password-reset request/confirm routes; email delivery depends on backend SMTP configuration. |
 | Feed, saved, following, discovery, social profile | `/home`, `/following`, `/saved`, `/discover`, `/profile`, `/users/:userId` | Feed/profile/save state is account-backed. Existing browser-saved IDs can be explicitly imported. Publication pages are separate. |
-| Workspace list, create/join, study workspace, sources, upload, citation preview | `/workspaces`, `/workspaces/new`, `/join/:token`, `/workspaces/:notebookId` | Uses notebook/source/ask APIs and source-page dialog; includes loading, empty, processing, failed, and request-error states exposed by the contract. |
+| Workspace list, create/join, study workspace, sources, upload, citation preview | `/workspaces`, `/workspaces/new`, `/join/:token`, `/workspaces/:notebookId` | Uses notebook/source/ask APIs and source-page dialog; includes loading, empty, processing, failed, and request-error states exposed by the contract. The create form's preview follows current values and appears after the form on phones. |
 | Group activity, assignments, progress, gaps, quiz scoreboard | `/workspaces/:notebookId/team` and quiz routes | Uses group, assignment, quiz, and attempt contracts. |
 | Quiz and game modes, lobby/session/results, weekly/group scoreboard | `/workspaces/:notebookId/quizzes/:quizId`, `/game`, `/workspaces/:notebookId/game`, `/workspaces/:notebookId/sessions/:sessionId` | Each game round presents one item at a time with back/jump navigation and preserved answers; one full answer set is submitted for server grading. Quiz navigation also preserves responses. Existing Figma answer colors and navy arena frame are used. Step ordering supports drag and keyboard controls. Matching uses unique dropdown choices and proportional points on newly generated rounds, with each selected/correct pair shown in the review. Duel/group sessions keep the server-backed scoreboard beside the active question on desktop and below it on phones. Session refresh remains polling, not realtime attendance. |
 | Friend requests and workspace invites | `/friends`, `/users/:userId`, workspace invite dialog | Account-backed incoming/outgoing/accepted states, accept/reject/cancel/remove, direct registered-email and accepted-friend invitations, and viewer/editor role selection. |
@@ -30,6 +30,14 @@ Reference: [Deep Notes — STACK 2026](https://www.figma.com/design/Agh2OMnizUCn
 |---|---|---|
 | Sign In | `223:10101` | `/login` |
 | Sign Up | `223:10144` | `/register` |
+| Landing | `286:3665` | `/` |
+| Home · Design Lagi | `223:10358` | `/home` |
+| Workspace · Mobile | `175:5891` | `/workspaces/:notebookId` |
+| Create Workspace · Mobile | `175:5465` | `/workspaces/new` |
+| Landing · Mobile | `175:5290` | `/` |
+| Sign In · Mobile | `175:5303` | `/login` |
+| Sign Up · Mobile | `175:5323` | `/register` |
+| Home · Mobile | `175:5363` | `/home` |
 | Main workspace | `175:579` | `/workspaces/:notebookId` |
 | Notes | `175:2579` | `/workspaces/:notebookId/notes` |
 | Discussion | `175:3357` | `/workspaces/:notebookId/discussion` |
@@ -37,13 +45,12 @@ Reference: [Deep Notes — STACK 2026](https://www.figma.com/design/Agh2OMnizUCn
 | 3D classroom | `178:3036` | `/workspaces/:notebookId/class` |
 | Material visualizer | `178:3091` | `/workspaces/:notebookId/visualization` |
 
-The root page context is node `174:135`. Desktop and mobile Figma variants share a responsive route rather than creating duplicate pages. On the code side the app shell uses a desktop sidebar/header and a phone navigation/menu; content grids collapse at Tailwind breakpoints and long navigation rows scroll horizontally.
+The root page context is node `174:135`. Desktop and mobile Figma variants share a responsive route rather than creating duplicate pages. Workspace, classroom, and visualization share wrapping tabs with one-line labels. On the code side the app shell uses a desktop sidebar/header and a phone navigation/menu; content grids collapse at Tailwind breakpoints.
 
 ## Responsive and interaction verification
 
-- Visually opened the current Sign In and Sign Up pages at a 1264×711 desktop viewport. The narrow-screen CSS reflows forms to one column and hides the illustration; a mobile viewport was not available for visual confirmation in this change.
-- Frontend TypeScript check and production build passed for these auth changes. ESLint was not run in this change.
-- Auth form submission was not attempted, so the login/register API response path was not rechecked in this visual change. Authenticated route screenshots were not part of this task.
-- Automated tests were not run or added. Do not treat this note as a report that all 188 frames have been screenshot-compared.
+- Local Playwright responsive checks cover landing, sign-in, sign-up, workspace creation preview, workspace tab navigation, and Home destinations at 320 px and 390 px; reduced-motion behavior is also checked. API responses are fixtures, and no account mutations occur.
+- Sign In was visually opened in the local browser at desktop size to check that Bubi stays inside the illustration panel. Mobile layout checks measure overflow and content placement; they are not screenshot comparisons against every Figma frame.
+- Frontend lint, type checks, unit tests, and builds are recorded in the current version entry. Authentication submissions and SMTP delivery were not exercised in this design change.
 
 Backend/API gaps are enumerated in [API_HANDOFF.md](API_HANDOFF.md).

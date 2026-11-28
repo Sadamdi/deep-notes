@@ -50,8 +50,14 @@ CLI (`pnpm dlx shadcn@latest add <component>` from `frontend/`); do not hand-edi
 | Source map/class visualizer | optional SVG/canvas views with text equivalents and API-backed source references |
 | Bubi mascot | six original Figma SVG expressions (`idle`, `senang`, `sedih`, `marah`, `antusias`, `semangat`); short character/arm reactions, Idle asset fallback, and reduced-motion support |
 | Authentication frame and field | shared sign-in/sign-up layout using exported Figma artwork, labeled icon fields, password visibility, and responsive form actions |
+| Workspace navigation | shared wrapping tabs for workspace, classroom, and visualization; labels remain single-line and keep a consistent minimum height |
+| Workspace creation preview | card cover uses the selected category icon and form state for its title, course, description, and visibility; follows the primary form action on phones |
+| Landing and authentication mascot | exported SVG Bubi enters inside the authentication artwork panel and waves; compact mobile placement and reduced-motion fallback keep the form usable |
+| Home learning panel | server-backed resume destination, shared streak card, and up to three account workspaces; loading and failure states do not imply that a user has no workspaces |
 
 Mascot motion is a brief state change, not a continuous loop. Supported reactions animate Bubi as a unit or move its arms; `prefers-reduced-motion` disables movement while the chosen face remains visible. Loading uses a short finite thinking motion, not a loop. The existing streak SVG tiers get a short celebration only after server stats confirm an increase. Explanation text, citations, streak counts, and game/quiz results never depend on animation. Shared buttons provide a small pressed response, and page headings enter softly; both respect the reduced-motion preference.
+
+Landing and authentication use the same SVG mascot renderer as study screens. The authentication version is clipped by its artwork card so Bubi emerges from the card edge; the landing version scales down and reserves space for the primary actions on mobile. Workspace tabs wrap as complete, single-line controls so narrow screens do not need horizontal tab scrolling.
 
 ## Changelog
 

@@ -54,3 +54,15 @@ Use the explicit package script form pnpm run ci; the bare pnpm ci alias may run
 ## [game] Mark a round complete as soon as the answer API accepts it
 Mark a round complete as soon as the answer API accepts it. A later session poll can still return stale progress while the player can already continue.
 (dicatat 2026-11-27)
+
+## [frontend] Compare fresh pre-finish stats with the completed session response before celebr
+Compare fresh pre-finish stats with the completed session response before celebrating a streak; repeating a session on the same UTC day must not trigger the celebration again.
+(dicatat 2026-11-27)
+
+## [game] Versi scoring item pasangan harus tersimpan di ronde agar soal baru mendapat poi
+Versi scoring item pasangan harus tersimpan di ronde agar soal baru mendapat poin proporsional tanpa mengubah penilaian ronde lama. Uji pointer drag dan keyboard drag secara terpisah.
+(dicatat 2026-11-27)
+
+## [frontend] Quiz content from AI may use Markdown code spans; render those spans semanticall
+Quiz content from AI may use Markdown code spans; render those spans semantically so programming terms stay readable without exposing delimiters.
+(dicatat 2026-11-27)

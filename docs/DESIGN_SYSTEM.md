@@ -39,17 +39,19 @@ CLI (`pnpm dlx shadcn@latest add <component>` from `frontend/`); do not hand-edi
 | Citation control and source page dialog | shows source title/page and opens page text through the authorized source-page endpoint |
 | Source row | title, type, who added it, status (processing, ready, failed) |
 | Contribution and group views | member activity, progress, gaps, assignments, and text values from existing group endpoints |
-| Quiz and game screens | one question/round at a time, keyboard-operable controls, feedback, and result summary |
+| Quiz and game screens | one active question at a time, keyboard-operable navigation, preserved answers, server-grounded feedback, and a result summary |
 | Shared app/public layouts | responsive desktop navigation, phone menu/bottom bar, consistent page states and protected route shell |
 | Workspace notes/discussion and Studio editor | reusable local-first forms; device-only behavior is stated in the UI |
 | Source scope picker | per-notebook choice of all ready sources or an explicit subset; shared across ask, companion, quiz, game, and writing assistance |
 | Workspace invite dialog | owner adds an accepted friend or registered email, chooses viewer/editor role, or creates a role-matched invite link |
 | AI assistance panel | task-specific actions, validated source citations with excerpts, and an explicit apply action; generated text is never inserted automatically |
+| Bubi loading state | shared page, panel, and compact status variants for page reads and actions; the mascot keeps a stable layout footprint and honors reduced motion |
+| Matching and order games | unique definition selection with explicit partial-credit guidance; draggable order with keyboard move controls kept alongside it |
 | Source map/class visualizer | optional SVG/canvas views with text equivalents and API-backed source references |
 | Bubi mascot | six original Figma SVG expressions (`idle`, `senang`, `sedih`, `marah`, `antusias`, `semangat`); short character/arm reactions, Idle asset fallback, and reduced-motion support |
 | Authentication frame and field | shared sign-in/sign-up layout using exported Figma artwork, labeled icon fields, password visibility, and responsive form actions |
 
-Mascot motion is a brief state change, not a continuous loop. Supported reactions animate Bubi as a unit or move its arms; `prefers-reduced-motion` disables movement while the chosen face remains visible. Explanation text, citations, and game/quiz results never depend on the animation.
+Mascot motion is a brief state change, not a continuous loop. Supported reactions animate Bubi as a unit or move its arms; `prefers-reduced-motion` disables movement while the chosen face remains visible. Loading uses a short finite thinking motion, not a loop. The existing streak SVG tiers get a short celebration only after server stats confirm an increase. Explanation text, citations, streak counts, and game/quiz results never depend on animation. Shared buttons provide a small pressed response, and page headings enter softly; both respect the reduced-motion preference.
 
 ## Changelog
 

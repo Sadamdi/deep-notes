@@ -5,7 +5,10 @@ Every task gets an entry: a `Plan` before code, `Released` after it is merged an
 
 | Version | Date | Type | Title | Status | File |
 |---|---|---|---|---|---|
-| v0.0.17 | 2026-11-27 | Config | Automatic backend updates on the demo server | In Progress | [v20261127-auto-deploy.md](v20261127-auto-deploy.md) |
+| v0.0.20 | 2026-11-27 | Config | Automatic backend updates on the demo server | In Progress | [v20261127-auto-deploy.md](v20261127-auto-deploy.md) |
+| v0.0.19 | 2026-11-27 | Fix | Render inline code in quizzes | In Progress | [v20261127-quiz-inline-code.md](v20261127-quiz-inline-code.md) |
+| v0.0.18 | 2026-11-27 | Feature / UI | Bubi loading and richer game feedback | In Progress | [v20261127-bubi-loading-game-feedback.md](v20261127-bubi-loading-game-feedback.md) |
+| v0.0.17 | 2026-11-27 | Feature / UI | Game, quiz, and Bubi streak experience | In Progress | [v20261127-game-quiz-experience.md](v20261127-game-quiz-experience.md) |
 | v0.0.16 | 2026-11-27 | Fix / Docs | Workspace error recovery and AI API handoff | Released | [v20261127-workspace-error-recovery.md](v20261127-workspace-error-recovery.md) |
 | v0.0.15 | 2026-11-27 | Feature | Game separation, streak, and source APIs | In Progress | [v20261127-game-api-refresh.md](v20261127-game-api-refresh.md) |
 | v0.0.14 | 2026-11-27 | Fix | Keep game rounds moving forward | In Progress | [v20261126-round-progression.md](v20261126-round-progression.md) |

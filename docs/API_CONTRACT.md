@@ -154,8 +154,8 @@ Full description: [GAME_CONTRACT.md](GAME_CONTRACT.md).
 | POST | `/notebooks/:id/sessions` | `{mode?: solo\|duel\|group, rounds?, focusTopic?, gameTypes?, sourceIds?}` | `201` session with stable `hostId` and planned rounds (items without answers) |
 | GET | `/notebooks/:id/sessions`, `/sessions/:sid`, `/sessions/:sid/scoreboard` | none | list, state (poll waiting/running sessions), live ranking |
 | POST | `/notebooks/:id/sessions/:sid/join`, `/start` | none | duel and group lobby; only `hostId` can start and the server requires two players |
-| POST | `/notebooks/:id/sessions/:sid/rounds/:n/answer` | `{answers[], elapsedMs?}` | graded results, points, mascot reaction |
-| POST | `/notebooks/:id/sessions/:sid/finish` | none | points, streak, badges, weak topics, rank |
+| POST | `/notebooks/:id/sessions/:sid/rounds/:n/answer` | `{answers[], elapsedMs?}` | graded results (including item fractions and the chosen answer), `correctCount`, total points, speed-bonus breakdown, mascot reaction |
+| POST | `/notebooks/:id/sessions/:sid/finish` | none | points, weighted accuracy, full-correct count, streak, badges, weak topics, rank |
 | GET | `/me/stats` | none | points, streak, badges |
 | POST | `/notebooks/:id/companion/teach-back` | `{topic, explanation, sourceIds?}` | `{evaluation, performance}` |
 | GET | `/notebooks/:id/sources/:sourceId/visual?kind=mindmap\|timeline\|chart` | none | Mind map with source pages, slide timeline in extracted slide order, or chart data from extracted spreadsheet cells |

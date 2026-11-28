@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { BookOpen, LoaderCircle, RefreshCw, Sparkles } from "lucide-react";
+import { BookOpen, RefreshCw, Sparkles } from "lucide-react";
 import type { AskResponse, Citation, SourceResponse, WorkspaceAiAssistResponse } from "@deep-notes/shared";
 import { REACTION_FOR_EVENT } from "@deep-notes/shared";
 import { BubiMascot } from "@/components/shared/BubiMascot";
-import { ErrorState } from "@/components/shared/PageStates";
+import { BubiLoading, ErrorState } from "@/components/shared/PageStates";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -93,9 +93,8 @@ export function AskPanel({ notebookId, sources, onCitationSelect }: { notebookId
             }
             value={question}
           />
-          <Button disabled={ask.isPending || !canUseSources} type="submit">
-            {ask.isPending ? <LoaderCircle aria-hidden="true" className="animate-spin" /> : <Sparkles aria-hidden="true" />}
-            Tanyakan
+          <Button aria-busy={ask.isPending} disabled={ask.isPending || !canUseSources} type="submit">
+            {ask.isPending ? <BubiLoading label="Bubi sedang mencari jawaban…" variant="compact" /> : <><Sparkles aria-hidden="true" />Tanyakan</>}
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">Jika jawabannya tidak ada di sumber, Bubi akan mengatakannya dengan jelas.</p>

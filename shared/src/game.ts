@@ -42,7 +42,7 @@ export const publicItemSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("fill"), prompt: z.string(), firstLetter: z.string(), length: z.number(), topic: z.string() }),
   z.object({ type: z.literal("tf"), prompt: z.string(), topic: z.string() }),
   z.object({ type: z.literal("order"), prompt: z.string(), steps: z.array(z.object({ id: z.number(), text: z.string() })), topic: z.string() }),
-  z.object({ type: z.literal("match"), prompt: z.string(), lefts: z.array(z.string()), rights: z.array(z.string()), topic: z.string() }),
+  z.object({ type: z.literal("match"), prompt: z.string(), lefts: z.array(z.string()), rights: z.array(z.string()), topic: z.string(), scoring: z.literal("proportional").optional() }),
   z.object({ type: z.literal("guess_page"), prompt: z.string(), options: z.array(z.object({ sourceTitle: z.string(), page: z.number().nullable() })).length(4), topic: z.string() }),
   z.object({ type: z.literal("teach"), prompt: z.string(), topic: z.string() }),
 ]);

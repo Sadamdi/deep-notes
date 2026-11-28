@@ -1,7 +1,9 @@
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { UserStats } from "@deep-notes/shared";
 import { Flame } from "lucide-react";
 import { api } from "@/lib/api";
+import { consumeStreakCelebration } from "@/lib/streakCelebration";
 import { Button } from "@/components/ui/button";
 
 const tiers = [
@@ -17,6 +19,14 @@ function streakTier(days: number) {
 
 export function StreakCard() {
   const stats = useQuery({ queryKey: ["me", "stats"], queryFn: () => api<UserStats>("/me/stats") });
+  const [celebrating, setCelebrating] = useState(false);
+  const checkedStreak = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!stats.data || stats.isFetching || checkedStreak.current === stats.data.streak) return;
+    setCelebrating(consumeStreakCelebration(stats.data.streak));
+    checkedStreak.current = stats.data.streak;
+  }, [stats.data, stats.isFetching]);
 
   if (stats.isPending) return <section aria-busy="true" className="rounded-3xl border bg-card p-5"><p className="text-sm text-muted-foreground">Memuat streak belajar…</p></section>;
   if (stats.isError) return <section className="rounded-3xl border border-destructive/30 bg-card p-5" aria-label="Streak belajar"><h2 className="font-bold text-navy">Streak belum berhasil dimuat</h2><p className="mt-1 text-sm text-muted-foreground">{stats.error.message}</p><Button className="mt-3" onClick={() => void stats.refetch()} size="sm" variant="outline">Coba lagi</Button></section>;
@@ -24,19 +34,20 @@ export function StreakCard() {
   const days = stats.data.streak;
   const tier = streakTier(days);
   return (
-    <section aria-label={`Streak belajar ${days} hari`} className="overflow-hidden rounded-3xl border bg-card p-4 sm:p-5">
+    <section aria-label={`Streak belajar ${days} hari`} className="overflow-hidden rounded-3xl border bg-card p-4 sm:p-5" data-celebrating={celebrating ? "true" : undefined}>
       <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"><Flame aria-hidden="true" className="size-4 text-warning-foreground"/>Streak belajar</div>
-      <div className="relative mx-auto aspect-[4/3] w-full max-w-[340px] overflow-hidden rounded-[28px] border-4 border-white" style={{ background: tier?.background ?? "#bcebdc" }}>
+      <div className="streak-card__art relative mx-auto aspect-[4/3] w-full max-w-[340px] overflow-hidden rounded-[28px] border-4 border-white" style={{ background: tier?.background ?? "#bcebdc" }}>
         {tier ? <>
           <img alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover" src={tier.backgroundArt}/>
-          <span className="absolute inset-x-0 top-[4%] z-10 text-center text-[clamp(3rem,12vw,6rem)] font-black leading-none drop-shadow-[0_4px_4px_rgba(0,0,0,0.25)]" style={{ color: tier.numberColor }}>{days}</span>
-          <img alt="" aria-hidden="true" className="absolute bottom-[-8%] left-1/2 h-[84%] w-[96%] -translate-x-1/2 object-contain" src={tier.mascot}/>
-        </> : <img alt="Bubi siap menemani streak belajar pertamamu" className="absolute inset-0 h-full w-full object-contain" src="/assets/streak-0.svg"/>}
+          <span className="streak-card__number absolute inset-x-0 top-[4%] z-10 text-center text-[clamp(3rem,12vw,6rem)] font-black leading-none drop-shadow-[0_4px_4px_rgba(0,0,0,0.25)]" style={{ color: tier.numberColor }}>{days}</span>
+          <span aria-hidden="true" className="streak-card__mascot absolute bottom-[-8%] left-1/2 h-[84%] w-[96%] -translate-x-1/2"><img alt="" className="h-full w-full object-contain" src={tier.mascot}/></span>
+        </> : <img alt="Bubi siap menemani streak belajar pertamamu" className="streak-card__mascot streak-card__mascot--solo absolute inset-0 h-full w-full object-contain" src="/assets/streak-0.svg"/>}
       </div>
       <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <p className="font-bold text-navy">{days} hari</p>
         <p className="text-xs text-muted-foreground">{tier?.label ?? "Mulai streak pertamamu"}</p>
       </div>
+      {celebrating && <p className="mt-2 text-sm font-semibold text-cite" role="status">Streak bertambah menjadi {days} hari. Hebat, lanjutkan besok!</p>}
       <p className="mt-2 text-xs text-muted-foreground">Streak terbaik: {stats.data.bestStreak} hari</p>
     </section>
   );

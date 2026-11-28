@@ -2,7 +2,7 @@
 
 | Attribute | Value |
 |---|---|
-| **Version** | v0.0.17 |
+| **Version** | v0.0.20 |
 | **Date** | 2026-11-27 |
 | **Status** | In Progress |
 | **Author** | Sulthan Adam Rahmadi |

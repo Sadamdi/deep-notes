@@ -56,7 +56,10 @@ No database changes. No migration is applied. The verification uses temporary lo
 - [x] Public demo health: `GET /api/v1/health` returned 200.
 - [x] Public OpenAPI includes AI assist, publications, and drafts; release manifest commit matches the pulled `main` commit `e8bc98bc598e9b563066252928402b2a6ae0a496`.
 - [x] Unauthenticated `POST /api/v1/notebooks/:id/ai/assist` returned 401, confirming the route is registered and authentication is enforced.
-- [ ] Authenticated real AI request and write flows: not verified in this task; no test account was used.
+- [x] Isolated local API write flows: registered three disposable `example.com` test users in a fresh PGlite database, created a notebook, shared it with a member, saved a private note, discussion post, updated draft, and saved feed post. A non-member could not read the discussion (404), and the shared member could not read the owner's private note.
+- [x] Persistence and login after restart: restarted the isolated backend, logged the test users in again, and confirmed the notebook, note, discussion, updated draft, and saved post remained available.
+- [x] Browser integration through the Vite API proxy: signed in through the local UI, opened the test workspace, created a note and confirmed it after reload, and sent a discussion message. Browser run reported zero API errors.
+- [ ] Authenticated Gemini/Bubi request: not verified. `GEMINI_API_KEYS` is not configured in the local backend. The public demo was only checked with an unauthenticated AI-assist request (401); no write request was sent to the shared demo.
 
 ## 7. Rollback
 

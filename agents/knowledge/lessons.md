@@ -66,3 +66,7 @@ Versi scoring item pasangan harus tersimpan di ronde agar soal baru mendapat poi
 ## [frontend] Quiz content from AI may use Markdown code spans; render those spans semanticall
 Quiz content from AI may use Markdown code spans; render those spans semantically so programming terms stay readable without exposing delimiters.
 (dicatat 2026-11-27)
+
+## [deploy] Protect release replacement behind one rollback path because set -e can exit bef
+Protect release replacement behind one rollback path because set -e can exit before an unguarded rollback branch; keep a fault-injection check for copy failures.
+(dicatat 2026-11-28)

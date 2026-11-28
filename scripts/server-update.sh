@@ -46,25 +46,36 @@ rm -rf dist.prev migrations.prev
 cp -r dist dist.prev
 cp -r migrations migrations.prev
 cp package.json package.json.prev
-rm -rf dist migrations
-cp -r "$tmp/new/dist" "$tmp/new/migrations" .
-cp "$tmp/new/package.json" package.json
 
 healthy() { for _ in $(seq 1 40); do curl -fsS --max-time 5 "$HEALTH" >/dev/null 2>&1 && return 0; sleep 1; done; return 1; }
 
-if npm install --omit=dev --no-audit --no-fund >/dev/null && pm2 restart deepnotes-api --update-env >/dev/null && healthy; then
-  pm2 save >/dev/null
-  echo "$commit" >"$STATE/deployed"
+replace_release() {
+  rm -rf dist migrations &&
+    cp -r "$tmp/new/dist" "$tmp/new/migrations" . &&
+    cp "$tmp/new/package.json" package.json &&
+    npm install --omit=dev --no-audit --no-fund >/dev/null &&
+    pm2 restart deepnotes-api --update-env >/dev/null &&
+    healthy &&
+    pm2 save >/dev/null
+}
+
+if replace_release && echo "$commit" >"$STATE/deployed"; then
   log "deployed $commit"
 else
   log "FAILED $commit: restoring the previous release"
-  rm -rf dist migrations
-  mv dist.prev dist
-  mv migrations.prev migrations
-  mv package.json.prev package.json
+  rollback_ok=1
+  rm -rf dist migrations || rollback_ok=0
+  mv dist.prev dist || rollback_ok=0
+  mv migrations.prev migrations || rollback_ok=0
+  mv package.json.prev package.json || rollback_ok=0
   npm install --omit=dev --no-audit --no-fund >/dev/null || true
-  pm2 restart deepnotes-api --update-env >/dev/null
+  pm2 restart deepnotes-api --update-env >/dev/null || rollback_ok=0
+  pm2 save >/dev/null || rollback_ok=0
   echo "$commit" >"$STATE/failed"
-  healthy || log "previous release is also unhealthy: run 'pm2 logs deepnotes-api'"
+  if ! healthy; then
+    log "previous release is also unhealthy: run 'pm2 logs deepnotes-api'"
+    rollback_ok=0
+  fi
+  [ "$rollback_ok" -eq 1 ] || log "rollback incomplete: inspect the app directory and run 'pm2 logs deepnotes-api'"
   exit 1
 fi

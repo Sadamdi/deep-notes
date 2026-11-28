@@ -1,3 +1,4 @@
+import { plainText } from "../../lib/plainText.js";
 import type { Citation, ExplanationStep, WorkspaceAiAssistInput, WorkspaceAiAssistResponse } from "@deep-notes/shared";
 import { BUBI_EMOTIONS, emotionSchema } from "@deep-notes/shared";
 import { z } from "zod";
@@ -119,7 +120,7 @@ export async function answerQuestion(notebookId: string, question: string, sourc
   });
   const citations = validateCitations(res.citations, chunks);
   if (!res.grounded || citations.length === 0 || !res.answer.trim()) return notFound();
-  return { grounded: true, text: res.answer.trim(), citations };
+  return { grounded: true, text: plainText(res.answer), citations };
 }
 
 export type ExplainResult =
@@ -139,7 +140,7 @@ export async function explainQuestion(notebookId: string, question: string, sour
   });
   const citations = validateCitations(res.citations, chunks);
   if (!res.grounded || citations.length === 0 || res.steps.length === 0) return none;
-  return { grounded: true, steps: res.steps, citations };
+  return { grounded: true, steps: res.steps.map((step) => ({ ...step, text: plainText(step.text) })), citations };
 }
 
 const assistNotFound = (): WorkspaceAiAssistResponse => ({ grounded: false, text: NOT_FOUND_TEXT, items: [], citations: [] });
@@ -177,7 +178,7 @@ export async function assistFromWorkspaceSources(notebookId: string, input: Work
   const itemCitations = usable.flatMap((item) => (typeof item === "string" ? [] : [{ n: item.n, quote: "" }]));
   const citations = validateCitations([...result.citations, ...itemCitations], chunks);
   if (!result.grounded || !result.text.trim() || !citations.length) return assistNotFound();
-  const items = usable.map((item) => (typeof item === "string" ? item : item.question).trim()).filter(Boolean).slice(0, 8);
+  const items = usable.map((item) => plainText(typeof item === "string" ? item : item.question)).filter(Boolean).slice(0, 8);
   if (input.task === "suggest_questions" && items.length === 0) return assistNotFound();
-  return { grounded: true, text: result.text.trim(), items, citations };
+  return { grounded: true, text: plainText(result.text), items, citations };
 }

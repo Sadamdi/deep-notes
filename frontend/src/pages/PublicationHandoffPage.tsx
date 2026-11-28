@@ -61,7 +61,7 @@ export function PublicationHandoffPage() {
     mutationFn: () => api(`/publications/${articleId}/comments`, jsonBody("POST", { body: commentBody, ...(replyTo ? { parentId: replyTo } : {}) })),
     onSuccess: async () => {
       setCommentBody(""); setReplyTo("");
-      await client.invalidateQueries({ queryKey: [...publicationsKey, articleId] });
+      await client.invalidateQueries({ queryKey: [...publicationsKey, "detail", articleId] });
     },
   });
   const follow = useMutation({
